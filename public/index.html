@@ -76,97 +76,112 @@
         </div>
     </div>
 
-    <script>
-        let profiles = [];
-        let loggedInAdmin = "";
+ <script>
+    let profiles = []; 
+    let loggedInUser = "";
 
-        // API Helper
-        async function api(url, body) {
-            const res = await fetch(url, {
+    // API Helper Function
+    async function api(url, data = {}) {
+        try {
+            const r = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify(data)
             });
-            return res.json();
+            return await r.json();
+        } catch (e) {
+            console.error("Connection Error:", e);
+            return { success: false };
+        }
+    }
+
+    // Login Function
+    async function handleLogin() {
+        const u = document.getElementById('user').value;
+        const p = document.getElementById('pass').value;
+        const res = await api('/api/login', { username: u, password: p });
+        
+        if(res.success) {
+            loggedInUser = u;
+            document.getElementById('loginArea').classList.add('hidden');
+            document.getElementById('mainArea').classList.remove('hidden');
+            
+            // লগইন হওয়ার সাথে সাথে ডাটা লোড করা
+            loadBackendData();
+        } else {
+            alert("ভুল পাসওয়ার্ড!");
+        }
+    }
+
+    // ডাটাবেস থেকে প্রোফাইল লোড করা
+    async function loadBackendData() {
+        const res = await api('/api/getInitData', {});
+        // আপনার ব্যাকএন্ড থেকে আসা 'profiles' অ্যারেটি ধরা হচ্ছে
+        profiles = res.profiles || [];
+        console.log("ডাটা লোড হয়েছে:", profiles); // ব্রাউজার কনসোলে চেক করার জন্য
+    }
+
+    // --- সরাসরি এবং শক্তিশালী ফিল্টারিং ফাংশন ---
+    function doSearch(val) {
+        const term = val.toLowerCase().trim();
+        const box = document.getElementById('suggestionBox');
+        box.innerHTML = '';
+
+        if (!term) {
+            box.classList.add('hidden');
+            return;
         }
 
-        // Login Logic
-        async function handleLogin() {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-            const res = await api('/api/login', { username: u, password: p });
-            
-            if(res.success) {
-                loggedInAdmin = u;
-                document.getElementById('loginArea').classList.add('hidden');
-                document.getElementById('mainArea').classList.remove('hidden');
+        // প্রোফাইল লিস্ট থেকে টাইপ করা অক্ষরের সাথে মিলানো
+        const matches = profiles.filter(p => 
+            p.name && p.name.toLowerCase().includes(term)
+        );
+
+        if (matches.length > 0) {
+            box.classList.remove('hidden');
+            matches.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'suggest-item p-3 hover:bg-blue-50 border-b cursor-pointer transition';
+                div.innerHTML = `<strong>${p.name}</strong> <span class="text-gray-400 text-xs ml-2">(${p.land} শতক)</span>`;
                 
-                // লগইন এর পর ডাটাবেস থেকে সব প্রোফাইল লোড করা
-                const data = await api('/api/getInitData', {});
-                profiles = data.profiles || [];
-                console.log("Profiles Loaded:", profiles);
-            } else {
-                alert(res.message);
-            }
+                // ক্লিক করলে ইনপুট বক্সে ডাটা অটো-ফিল হবে
+                div.onclick = function() {
+                    document.getElementById('searchName').value = p.name;
+                    document.getElementById('resLand').value = p.land;
+                    document.getElementById('resRate').value = p.rate;
+                    box.classList.add('hidden');
+                };
+                box.appendChild(div);
+            });
+        } else {
+            box.classList.add('hidden');
         }
+    }
 
-        // --- মূল ফিল্টারিং সিস্টেম ---
-        function doSearch(query) {
-            const val = query.toLowerCase().trim();
-            const box = document.getElementById('suggestionBox');
-            box.innerHTML = '';
-
-            if(!val) {
-                box.classList.add('hidden');
-                return;
-            }
-
-            // আপনার ব্যাকএন্ডের profiles অ্যারে থেকে ফিল্টার করা হচ্ছে
-            const filtered = profiles.filter(p => p.name.toLowerCase().includes(val));
-
-            if(filtered.length > 0) {
-                box.classList.remove('hidden');
-                filtered.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = 'suggest-item font-medium';
-                    div.innerHTML = `<span>${p.name}</span> <span class="text-xs text-gray-400 float-right mt-1">${p.land} শতক</span>`;
-                    div.onclick = () => {
-                        document.getElementById('searchName').value = p.name;
-                        document.getElementById('resLand').value = p.land;
-                        document.getElementById('resRate').value = p.rate;
-                        box.classList.add('hidden');
-                    };
-                    box.appendChild(div);
-                });
-            } else {
-                box.classList.add('hidden');
-            }
+    // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ করা
+    document.addEventListener('click', (e) => {
+        if (e.target.id !== 'searchName') {
+            document.getElementById('suggestionBox').classList.add('hidden');
         }
+    });
 
-        // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ
-        document.addEventListener('click', (e) => {
-            if(e.target.id !== 'searchName') document.getElementById('suggestionBox').classList.add('hidden');
-        });
-
-        // ডাটা সেভ করা
-        async function submitData() {
-            const d = {
-                name: document.getElementById('searchName').value,
-                land: document.getElementById('resLand').value,
-                rate: document.getElementById('resRate').value,
-                hariYear: document.getElementById('inYear').value,
-                tkGiven: document.getElementById('inTk').value,
-                loggedInUser: loggedInAdmin
-            };
-            
-            if(!d.name || !d.hariYear) return alert("নাম এবং বছর দিন!");
-            
-            const res = await api('/api/saveFormData', d);
-            if(res.success) {
-                alert("সফলভাবে সেভ হয়েছে!");
-                location.reload();
-            }
+    // ডাটা সেভ করা
+    async function submitData() {
+        const d = {
+            name: document.getElementById('searchName').value,
+            land: document.getElementById('resLand').value,
+            rate: document.getElementById('resRate').value,
+            hariYear: document.getElementById('inYear').value,
+            tkGiven: document.getElementById('inTk').value,
+            loggedInUser: loggedInUser
+        };
+        if(!d.name || !d.hariYear) return alert("তথ্য পূরণ করুন!");
+        const res = await api('/api/saveFormData', d);
+        if(res.success) {
+            alert("সফলভাবে সেভ হয়েছে!");
+            location.reload();
         }
-    </script>
+    }
+</script>
 </body>
 </html>
