@@ -17,30 +17,29 @@
         .btn-primary { background: linear-gradient(135deg, #1e3a5f, #2d5a87); }
         .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669'); }
         
-        /* Modal Overlay - Base z-index */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; }
         
-        /* FIX: Confirm Modal will be ON TOP of Settings Modal */
         #confirmModal { z-index: 10000; background: rgba(0,0,0,0.8); }
 
         .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #0ea5e9; max-height: 200px; overflow-y: auto; z-index: 50; border-radius: 0 0 8px 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        /* Toast Notification Styles - CENTER OF SCREEN */
         #toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
         .toast { padding: 15px 30px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out; text-align: center; min-width: 250px; font-size: 18px; pointer-events: auto; }
         .toast.success { background-color: #10b981; }
         .toast.error { background-color: #ef4444; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Hide Arrows from Number Input */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="p-2 sm:p-4 md:p-6">
 
-    <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <!-- Custom Confirm Modal (Higher z-index) -->
     <div id="confirmModal" class="hidden modal-overlay">
         <div class="bg-white rounded-xl p-6 text-center max-w-sm shadow-2xl border-2 border-red-200">
             <p id="confirmMessage" class="text-red-600 font-bold text-xl mb-6">Are you want to delete?</p>
@@ -106,7 +105,6 @@
                 <form id="landForm" class="grid grid-cols-2 md:grid-cols-8 gap-3 items-end">
                     <div class="relative col-span-2">
                         <label class="text-xs font-semibold text-gray-600" data-lang="name">নাম</label>
-                        <!-- Added oninput for filter -->
                         <input type="text" id="entryName" class="input-field w-full px-3 py-2 rounded-lg bg-white" autocomplete="off" required>
                         <div id="nameDD" class="hidden dropdown-list"></div>
                     </div>
@@ -124,11 +122,13 @@
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="tk_given">টাকা</label>
-                        <input type="text" id="entryTk" class="input-field w-full px-3 py-2 rounded-lg" placeholder="e.g. 500">
+                        <!-- Changed to type="number" -->
+                        <input type="number" id="entryTk" class="input-field w-full px-3 py-2 rounded-lg" placeholder="e.g. 500" required>
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="lease_year">বছর</label>
-                        <input type="text" id="entryYear" class="input-field w-full px-3 py-2 rounded-lg bg-white" placeholder="e.g. 2025">
+                        <!-- Changed to type="number" -->
+                        <input type="number" id="entryYear" class="input-field w-full px-3 py-2 rounded-lg bg-white" placeholder="e.g. 2025" required>
                     </div>
                     <div>
                         <button type="submit" id="saveEntryBtn" class="btn btn-primary w-full py-2 rounded-lg font-semibold" data-lang="save_btn">Save</button>
@@ -141,7 +141,6 @@
                 <h3 class="font-bold text-primary mb-3" data-lang="search_title">Search</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
                     <div class="relative">
-                        <!-- Added oninput for filter -->
                         <input type="text" id="searchName" placeholder="Name" class="input-field w-full px-3 py-2 rounded-lg bg-white" autocomplete="off">
                         <input type="hidden" id="searchNameVal" value="ALL">
                         <div id="searchDD" class="hidden dropdown-list"></div>
@@ -208,202 +207,58 @@
             en: { login_title: "Login", login_btn: "Login", app_title: "Land Lease Management", settings_btn: "Settings", logout_btn: "Logout", new_entry_title: "New Entry", name: "Name", land: "Land", hari_calc: "Lease Calc", rate: "Rate", tk_given: "Amount", lease_year: "Year", save_btn: "Save", save_success: "Saved!", search_title: "Search", all_lands: "All Lands", all_years: "All Years", due_btn: "Due", data_btn: "Data", del_btn: "Delete", t_date: "Date", t_name: "Name", t_land: "Land", t_rate: "Rate", t_total: "Total", t_given: "Given", t_year: "Year", settings_title: "Settings: Profiles", saved_pro: "Saved Profiles", hari_start: "Start", action: "Action" }
         };
 
-        const setLang = () => { 
-            document.querySelectorAll('[data-lang]').forEach(el => { const k = el.getAttribute('data-lang'); if(trans[lang][k]) el.innerText = trans[lang][k]; }); 
-            document.getElementById('langBtn').innerText = lang === 'bn' ? 'EN' : 'বাং'; 
-            
-            // Force update specific buttons if needed
-            const delBtnMain = document.getElementById('delBtnMain');
-            if(delBtnMain) delBtnMain.innerText = lang === 'bn' ? 'ডিলিট' : 'Delete';
-        };
-        
+        const setLang = () => { document.querySelectorAll('[data-lang]').forEach(el => { const k = el.getAttribute('data-lang'); if(trans[lang][k]) el.innerText = trans[lang][k]; }); document.getElementById('langBtn').innerText = lang === 'bn' ? 'EN' : 'বাং'; const delBtnMain = document.getElementById('delBtnMain'); if(delBtnMain) delBtnMain.innerText = lang === 'bn' ? 'ডিলিট' : 'Delete'; };
         const toggleLang = () => { lang = lang === 'bn' ? 'en' : 'bn'; setLang(); renderS_tbl(); };
 
         let user = null, profiles = [], names = [], sMap = {}, yMap = {};
         let confirmCallback = null; 
-        let profileNames = []; // Global to store entry names
+        let profileNames = [];
         
         const toEnglishDigits = (str) => { if (!str) return str; const map = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' }; return String(str).replace(/[০-৯]/g, d => map[d]); };
         
-        // --- TOAST NOTIFICATION SYSTEM (CENTER) ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerText = message;
-            container.appendChild(toast);
+        function showToast(message, type = 'success') { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerText = message; container.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000); }
 
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
-        }
+        function showConfirm(message, callback) { document.getElementById('confirmMessage').innerText = message; document.getElementById('confirmModal').classList.remove('hidden'); confirmCallback = callback; }
+        function closeConfirm() { document.getElementById('confirmModal').classList.add('hidden'); confirmCallback = null; }
+        function executeConfirm() { if (confirmCallback) confirmCallback(); closeConfirm(); }
 
-        // --- CUSTOM CONFIRM MODAL SYSTEM ---
-        function showConfirm(message, callback) {
-            document.getElementById('confirmMessage').innerText = message;
-            document.getElementById('confirmModal').classList.remove('hidden');
-            confirmCallback = callback;
-        }
+        function togglePassVisibility() { const passInput = document.getElementById('password'); const eyeOpen = document.getElementById('eyeOpen'); const eyeOff = document.getElementById('eyeOff'); if (passInput.type === 'password') { passInput.type = 'text'; eyeOpen.classList.add('hidden'); eyeOff.classList.remove('hidden'); } else { passInput.type = 'password'; eyeOpen.classList.remove('hidden'); eyeOff.classList.add('hidden'); } }
 
-        function closeConfirm() {
-            document.getElementById('confirmModal').classList.add('hidden');
-            confirmCallback = null;
-        }
-
-        function executeConfirm() {
-            if (confirmCallback) confirmCallback();
-            closeConfirm();
-        }
-
-        function togglePassVisibility() {
-            const passInput = document.getElementById('password');
-            const eyeOpen = document.getElementById('eyeOpen');
-            const eyeOff = document.getElementById('eyeOff');
-            if (passInput.type === 'password') { passInput.type = 'text'; eyeOpen.classList.add('hidden'); eyeOff.classList.remove('hidden'); } 
-            else { passInput.type = 'password'; eyeOpen.classList.remove('hidden'); eyeOff.classList.add('hidden'); }
-        }
-
-        // --- AUTO LOGOUT (5 Minutes) ---
-        const IDLE_TIMEOUT = 5 * 60 * 1000; 
-        let idleTimer;
-        function startIdleMonitor() { 
-            window.addEventListener('mousemove', resetIdleTimer, true); 
-            window.addEventListener('mousedown', resetIdleTimer, true); 
-            window.addEventListener('keypress', resetIdleTimer, true); 
-            window.addEventListener('touchmove', resetIdleTimer, true); 
-            window.addEventListener('scroll', resetIdleTimer, true); 
-            resetIdleTimer(); 
-        }
+        const IDLE_TIMEOUT = 5 * 60 * 1000; let idleTimer;
+        function startIdleMonitor() { window.addEventListener('mousemove', resetIdleTimer, true); window.addEventListener('mousedown', resetIdleTimer, true); window.addEventListener('keypress', resetIdleTimer, true); window.addEventListener('touchmove', resetIdleTimer, true); window.addEventListener('scroll', resetIdleTimer, true); resetIdleTimer(); }
         function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(logout, IDLE_TIMEOUT); }
 
-        // API Call with Cache Busting
-        const api = (url, data = {}) => {
-            const separator = url.includes('?') ? '&' : '?';
-            const cacheUrl = url + separator + 't=' + new Date().getTime();
-            return fetch(cacheUrl, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(data) 
-            }).then(r => r.json());
-        };
+        const api = (url, data = {}) => { const separator = url.includes('?') ? '&' : '?'; const cacheUrl = url + separator + 't=' + new Date().getTime(); return fetch(cacheUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()); };
 
-        // Login
-        document.getElementById('loginForm').addEventListener('submit', async e => {
-            e.preventDefault();
-            const res = await api('/api/login', { username: document.getElementById('username').value, password: document.getElementById('password').value });
-            if (res.success) { user = res.user; localStorage.setItem('s', JSON.stringify({ u: user.name })); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); init(); startIdleMonitor(); }
-            else { document.getElementById('loginError').classList.remove('hidden'); document.getElementById('loginError').innerText = res.message; }
-        });
-        
+        document.getElementById('loginForm').addEventListener('submit', async e => { e.preventDefault(); const res = await api('/api/login', { username: document.getElementById('username').value, password: document.getElementById('password').value }); if (res.success) { user = res.user; localStorage.setItem('s', JSON.stringify({ u: user.name })); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); init(); startIdleMonitor(); } else { document.getElementById('loginError').classList.remove('hidden'); document.getElementById('loginError').innerText = res.message; } });
         const logout = () => { clearTimeout(idleTimer); localStorage.removeItem('s'); location.reload(); };
 
-        // Load Data
         async function init() {
-            // Reset fields
-            document.getElementById('nameDD').innerHTML = '';
-            document.getElementById('searchDD').innerHTML = '';
-            resetSearchDropdowns();
-
+            document.getElementById('nameDD').innerHTML = ''; document.getElementById('searchDD').innerHTML = ''; resetSearchDropdowns();
             const d = await api('/api/getInitData');
-            
-            profiles = d.profiles || [];
-            const opt = d.searchOptions || {}; 
-            
-            names = opt.names || []; 
-            sMap = opt.landMap || {}; 
-            yMap = opt.yearMap || {}; 
-            
-            // Store profile names globally for entry filter
+            profiles = d.profiles || []; const opt = d.searchOptions || {}; 
+            names = opt.names || []; sMap = opt.landMap || {}; yMap = opt.yearMap || {}; 
             profileNames = [...new Set(profiles.map(p => p.name))].sort();
-            
-            // Setup Language and Dropdown Filters
-            setLang();
-            setupDropdownFilters();
+            setLang(); setupDropdownFilters();
         }
 
-        // --- DROPDOWN FILTER LOGIC ---
         function setupDropdownFilters() {
-            const entryInput = document.getElementById('entryName');
-            const entryDD = document.getElementById('nameDD');
-            const searchInput = document.getElementById('searchName');
-            const searchDD = document.getElementById('searchDD');
-
-            // Helper to render filtered entry list
-            const renderEntryList = (val) => {
-                entryDD.innerHTML = '';
-                const filtered = profileNames.filter(n => n.toLowerCase().includes(val));
-                if (filtered.length === 0) {
-                    entryDD.innerHTML = '<div class="p-2 text-gray-400 text-center">No match found</div>';
-                } else {
-                    filtered.forEach(n => {
-                        entryDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer border-b" onclick="setEntryName('${n}')">${n}</div>`;
-                    });
-                }
-                entryDD.classList.remove('hidden');
-            };
-
-            // Helper to render filtered search list
-            const renderSearchList = (val) => {
-                searchDD.innerHTML = '';
-                // Add "All Names" if search is empty
-                if (val === "") {
-                    searchDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer font-bold text-blue-600" onclick="setSearchName('ALL', 'All Names')">All Names</div>`;
-                }
-                
-                const filtered = names.filter(n => n.toLowerCase().includes(val));
-                if (filtered.length === 0 && val !== "") {
-                     // Only show "No match" if something is typed and nothing found, else just show nothing or All Names
-                     if(val !== "") searchDD.innerHTML = '<div class="p-2 text-gray-400 text-center">No match found</div>';
-                } else {
-                    filtered.forEach(n => {
-                        searchDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer" onclick="setSearchName('${n}', '${n}')">${n}</div>`;
-                    });
-                }
-                searchDD.classList.remove('hidden');
-            };
-
-            // Entry Name Listeners
+            const entryInput = document.getElementById('entryName'); const entryDD = document.getElementById('nameDD');
+            const searchInput = document.getElementById('searchName'); const searchDD = document.getElementById('searchDD');
+            const renderEntryList = (val) => { entryDD.innerHTML = ''; const filtered = profileNames.filter(n => n.toLowerCase().includes(val)); if (filtered.length === 0) { entryDD.innerHTML = '<div class="p-2 text-gray-400 text-center">No match found</div>'; } else { filtered.forEach(n => { entryDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer border-b" onclick="setEntryName('${n}')">${n}</div>`; }); } entryDD.classList.remove('hidden'); };
+            const renderSearchList = (val) => { searchDD.innerHTML = ''; if (val === "") { searchDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer font-bold text-blue-600" onclick="setSearchName('ALL', 'All Names')">All Names</div>`; } const filtered = names.filter(n => n.toLowerCase().includes(val)); if (filtered.length === 0 && val !== "") { if(val !== "") searchDD.innerHTML = '<div class="p-2 text-gray-400 text-center">No match found</div>'; } else { filtered.forEach(n => { searchDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer" onclick="setSearchName('${n}', '${n}')">${n}</div>`; }); } searchDD.classList.remove('hidden'); };
             entryInput.addEventListener('focus', () => { renderEntryList(entryInput.value.toLowerCase()); entryInput.select(); });
             entryInput.addEventListener('input', () => renderEntryList(entryInput.value.toLowerCase()));
-
-            // Search Name Listeners
             searchInput.addEventListener('focus', () => { renderSearchList(searchInput.value.toLowerCase()); searchInput.select(); });
             searchInput.addEventListener('input', () => renderSearchList(searchInput.value.toLowerCase()));
         }
 
-        function resetSearchDropdowns() {
-            document.getElementById('searchNameVal').value = 'ALL';
-            document.getElementById('searchName').value = 'All Names';
-            const lSel = document.getElementById('searchLand'); lSel.innerHTML = '<option value="ALL">All Lands</option>';
-            const ySel = document.getElementById('searchYear'); ySel.innerHTML = '<option value="ALL">All Years</option>';
-        }
+        function resetSearchDropdowns() { document.getElementById('searchNameVal').value = 'ALL'; document.getElementById('searchName').value = 'All Names'; const lSel = document.getElementById('searchLand'); lSel.innerHTML = '<option value="ALL">All Lands</option>'; const ySel = document.getElementById('searchYear'); ySel.innerHTML = '<option value="ALL">All Years</option>'; }
 
-        // Entry Logic
-        const setEntryName = n => { 
-            document.getElementById('entryName').value = n; 
-            document.getElementById('nameDD').classList.add('hidden'); 
-            const m = profiles.filter(p => p.name === n); 
-            const lSel = document.getElementById('entryLand'); 
-            lSel.innerHTML = '<option value="">Select</option>'; 
-            m.forEach(p => lSel.innerHTML += `<option value="${p.land}">${p.land}</option>`); 
-            if (m.length === 1) { lSel.value = m[0].land; updateRate(); } 
-        };
+        const setEntryName = n => { document.getElementById('entryName').value = n; document.getElementById('nameDD').classList.add('hidden'); const m = profiles.filter(p => p.name === n); const lSel = document.getElementById('entryLand'); lSel.innerHTML = '<option value="">Select</option>'; m.forEach(p => lSel.innerHTML += `<option value="${p.land}">${p.land}</option>`); if (m.length === 1) { lSel.value = m[0].land; updateRate(); } };
+        const updateRate = () => { const n = document.getElementById('entryName').value, l = document.getElementById('entryLand').value; const p = profiles.find(x => x.name === n && x.land == l); if (p) { document.getElementById('entryRate').innerHTML = `<option value="${p.rate}">${p.rate}</option>`; document.getElementById('entryRate').value = p.rate; document.getElementById('entryHari').value = p.hariBorsho || "-"; } else { document.getElementById('entryRate').innerHTML = '<option value="">Select</option>'; document.getElementById('entryHari').value = ""; } };
 
-        const updateRate = () => { 
-            const n = document.getElementById('entryName').value, l = document.getElementById('entryLand').value; 
-            const p = profiles.find(x => x.name === n && x.land == l); 
-            if (p) { 
-                document.getElementById('entryRate').innerHTML = `<option value="${p.rate}">${p.rate}</option>`; 
-                document.getElementById('entryRate').value = p.rate; 
-                document.getElementById('entryHari').value = p.hariBorsho || "-"; 
-            } else {
-                document.getElementById('entryRate').innerHTML = '<option value="">Select</option>'; 
-                document.getElementById('entryHari').value = "";
-            }
-        };
-
-        // Save Entry
+        // Save Entry - Updated Logic
         document.getElementById('landForm').addEventListener('submit', async e => {
             e.preventDefault();
             const btn = document.getElementById('saveEntryBtn');
@@ -412,87 +267,59 @@
             btn.innerText = lang === 'bn' ? "সেভ হচ্ছে..." : "Saving...";
             btn.disabled = true;
 
-            const d = { name: document.getElementById('entryName').value, land: document.getElementById('entryLand').value, rate: document.getElementById('entryRate').value, tkGiven: toEnglishDigits(document.getElementById('entryTk').value), hariYear: toEnglishDigits(document.getElementById('entryYear').value), loggedInUser: user.name };
+            const name = document.getElementById('entryName').value;
+            const land = document.getElementById('entryLand').value;
+            const rate = document.getElementById('entryRate').value;
             
-            if (!d.name || !d.land || !d.rate) {
+            // Get values from number inputs
+            const tkRaw = document.getElementById('entryTk').value;
+            const yearRaw = document.getElementById('entryYear').value;
+
+            // 1. Check if ANY field is empty
+            if (!name || !land || !rate || !tkRaw || !yearRaw) {
                 showToast(lang === 'bn' ? "সব ঘর পূরণ করুন" : "Fill all fields", "error");
-                btn.innerText = originalText;
-                btn.disabled = false;
-                return;
+                btn.innerText = originalText; btn.disabled = false; return;
             }
+
+            // 2. Convert and Validate Numbers
+            const tkGiven = toEnglishDigits(tkRaw);
+            const hariYear = toEnglishDigits(yearRaw);
+
+            // Check if they are valid numbers
+            if (isNaN(tkGiven) || isNaN(hariYear)) {
+                showToast(lang === 'bn' ? "টাকা ও বছরে শুধুমাত্র সংখ্যা দিন" : "Amount and Year must be numbers", "error");
+                btn.innerText = originalText; btn.disabled = false; return;
+            }
+
+            const d = { name, land, rate, tkGiven, hariYear, loggedInUser: user.name };
 
             const res = await api('/api/saveFormData', d);
-            
-            btn.innerText = originalText;
-            btn.disabled = false;
-
-            if (res.success) { 
-                e.target.reset(); 
-                showToast(lang === 'bn' ? "সেভ সফল হয়েছে!" : "Saved Successfully!", "success");
-                init(); 
-            }
-            else {
-                showToast(lang === 'bn' ? "সেভ ব্যর্থ হয়েছে" : "Error saving", "error");
-            }
+            btn.innerText = originalText; btn.disabled = false;
+            if (res.success) { e.target.reset(); showToast(lang === 'bn' ? "সেভ সফল হয়েছে!" : "Saved Successfully!", "success"); init(); }
+            else { showToast(lang === 'bn' ? "সেভ ব্যর্থ হয়েছে" : "Error saving", "error"); }
         });
 
-        // Search Logic
         const setSearchName = (nameVal, displayName) => { 
-            document.getElementById('searchNameVal').value = nameVal; 
-            document.getElementById('searchName').value = displayName; 
-            document.getElementById('searchDD').classList.add('hidden'); 
-            
-            const lSel = document.getElementById('searchLand'); 
-            lSel.innerHTML = '<option value="ALL">All Lands</option>'; 
-            if (nameVal !== 'ALL' && sMap[nameVal]) {
-                sMap[nameVal].forEach(l => lSel.innerHTML += `<option value="${l}">${l}</option>`);
-            }
-
-            const ySel = document.getElementById('searchYear'); 
-            ySel.innerHTML = '<option value="ALL">All Years</option>'; 
-            if (nameVal !== 'ALL' && yMap[nameVal]) {
-                yMap[nameVal].forEach(y => ySel.innerHTML += `<option value="${y}">${y}</option>`);
-            }
+            document.getElementById('searchNameVal').value = nameVal; document.getElementById('searchName').value = displayName; document.getElementById('searchDD').classList.add('hidden'); 
+            const lSel = document.getElementById('searchLand'); lSel.innerHTML = '<option value="ALL">All Lands</option>'; if (nameVal !== 'ALL' && sMap[nameVal]) { sMap[nameVal].forEach(l => lSel.innerHTML += `<option value="${l}">${l}</option>`); }
+            const ySel = document.getElementById('searchYear'); ySel.innerHTML = '<option value="ALL">All Years</option>'; if (nameVal !== 'ALL' && yMap[nameVal]) { yMap[nameVal].forEach(y => ySel.innerHTML += `<option value="${y}">${y}</option>`); }
         };
 
-        // Due Logic
         const getDue = async () => {
             const nameVal = document.getElementById('searchNameVal').value; const landVal = document.getElementById('searchLand').value; const yearVal = document.getElementById('searchYear').value;
             const query = { name: nameVal, land: landVal, year: toEnglishDigits(yearVal) };
             const d = await api('/api/getReportData', query);
             document.getElementById('resultArea').classList.remove('hidden'); document.getElementById('statusCard').classList.remove('hidden'); document.getElementById('dataCard').classList.add('hidden');
-
             if (d.records.length > 0) {
                 const groups = {};
                 d.records.forEach(r => { const yr = r.hariYear || r.year; const key = `${r.name}_${r.land}_${yr}`; if(!groups[key]) groups[key] = { name: r.name, land: r.land, year: yr, total: 0, paid: 0 }; if(groups[key].total === 0) groups[key].total = parseFloat(r.total); groups[key].paid += parseFloat(r.given); });
                 let html = '<div class="space-y-2">';
-                
-                if (nameVal !== 'ALL') {
-                    let hasContent = false;
-                    Object.values(groups).forEach(g => { 
-                        const due = g.total - g.paid;
-                        if (due > 30) { 
-                            hasContent = true;
-                            html += `<div class="p-3 bg-red-50 border-l-4 border-red-500 rounded shadow-sm"><p class="font-bold text-red-700">${g.name}</p><p class="text-sm">${g.year} সাল, ${g.land} শতাংশ জমির বকেয়া: <span class="font-bold">${due.toFixed(2)} টাকা</span></p></div>`; 
-                        }
-                    });
-                    if(!hasContent) html += '<p class="text-center text-green-600 font-bold py-4">কোনো বকেয়া নেই।</p>';
-                } else {
-                    let foundDue = false; 
-                    Object.values(groups).forEach(g => { 
-                        const due = g.total - g.paid;
-                        if (due > 30) { 
-                            foundDue = true; 
-                            html += `<div class="p-3 bg-red-50 border-l-4 border-red-500 rounded shadow-sm"><p class="font-bold text-red-700">${g.name} (${g.year}) - ${g.land} শতাংশ</p><p class="text-sm">বকেয়া: <span class="font-bold">${due.toFixed(2)} টাকা</span></p></div>`; 
-                        } 
-                    });
-                    if(!foundDue) html += '<p class="text-center text-green-600 font-bold py-4">কারো বকেয়া নেই!</p>';
-                }
+                if (nameVal !== 'ALL') { let hasContent = false; Object.values(groups).forEach(g => { const due = g.total - g.paid; if (due > 30) { hasContent = true; html += `<div class="p-3 bg-red-50 border-l-4 border-red-500 rounded shadow-sm"><p class="font-bold text-red-700">${g.name}</p><p class="text-sm">${g.year} সাল, ${g.land} শতাংশ জমির বকেয়া: <span class="font-bold">${due.toFixed(2)} টাকা</span></p></div>`; } }); if(!hasContent) html += '<p class="text-center text-green-600 font-bold py-4">কোনো বকেয়া নেই।</p>'; }
+                else { let foundDue = false; Object.values(groups).forEach(g => { const due = g.total - g.paid; if (due > 30) { foundDue = true; html += `<div class="p-3 bg-red-50 border-l-4 border-red-500 rounded shadow-sm"><p class="font-bold text-red-700">${g.name} (${g.year}) - ${g.land} শতাংশ</p><p class="text-sm">বকেয়া: <span class="font-bold">${due.toFixed(2)} টাকা</span></p></div>`; } }); if(!foundDue) html += '<p class="text-center text-green-600 font-bold py-4">কারো বকেয়া নেই!</p>'; }
                 html += '</div>'; document.getElementById('statusCard').innerHTML = html;
             } else { document.getElementById('statusCard').innerHTML = '<p class="text-center text-gray-500 py-4">কোনো ডাটা পাওয়া যায়নি</p>'; }
         };
 
-        // Data Logic
         const getData = async () => {
             const name = document.getElementById('searchNameVal').value; const year = document.getElementById('searchYear').value;
             if (name === 'ALL' || year === 'ALL') { showToast(lang === 'bn' ? 'নাম ও সাল সিলেক্ট করুন' : 'Select name & year', 'error'); return; }
@@ -503,29 +330,21 @@
             else d.records.forEach(r => tb.innerHTML += `<tr class="hover:bg-gray-50"><td class="p-2 border">${r.date}</td><td class="p-2 border">${r.name}</td><td class="p-2 border text-center">${r.land}</td><td class="p-2 border text-center">${r.rate}</td><td class="p-2 border text-right">${r.total}</td><td class="p-2 border text-right">${r.given}</td><td class="p-2 border text-center">${r.hariYear || r.year}</td></tr>`);
         };
 
-        // Delete Logic
         const delData = () => {
             const n = document.getElementById('searchNameVal').value; const y = document.getElementById('searchYear').value;
             if (n === 'ALL' || y === 'ALL') { showToast(lang === 'bn' ? 'নির্দিষ্ট নাম/সাল সিলেক্ট করুন' : 'Select specific name/year', 'error'); return; }
-            
             showConfirm(lang === 'bn' ? "আপনি কি ডিলিট করতে চান?" : "Are you want to delete?", async () => {
                 const res = await api('/api/deleteRecords', { name: n, year: toEnglishDigits(y) });
-                if(res.success) { 
-                    document.getElementById('resultArea').classList.add('hidden'); 
-                    await init(); 
-                    showToast(lang === 'bn' ? "সফলভাবে ডিলিট হয়েছে!" : "Deleted Successfully!", "success");
-                }
+                if(res.success) { document.getElementById('resultArea').classList.add('hidden'); await init(); showToast(lang === 'bn' ? "সফলভাবে ডিলিট হয়েছে!" : "Deleted Successfully!", "success"); }
                 else { showToast(lang === 'bn' ? "ডিলিট ব্যর্থ হয়েছে" : "Error deleting", "error"); }
             });
         };
 
-        // Settings Logic
         const openSettings = () => { document.getElementById('settingsModal').classList.remove('hidden'); renderS_tbl(); };
         const closeSettings = () => document.getElementById('settingsModal').classList.add('hidden');
         
         const renderS_tbl = () => { 
-            const tb = document.getElementById('sTable'); 
-            tb.innerHTML = ''; 
+            const tb = document.getElementById('sTable'); tb.innerHTML = ''; 
             if (profiles.length === 0) tb.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 p-4">${lang === 'bn' ? 'কোনো প্রোফাইল নেই' : 'No Profiles'}</td></tr>`; 
             else profiles.forEach(p => {
                 const delText = lang === 'bn' ? 'ডিলিট' : 'Delete';
@@ -539,13 +358,7 @@
             const d = { name: document.getElementById('sName').value, land: document.getElementById('sLand').value, rate: document.getElementById('sRate').value, hariBorsho: document.getElementById('sHari').value, oldName: document.getElementById('sOldName').value, oldLand: document.getElementById('sOldLand').value, oldRate: document.getElementById('sOldRate').value }; 
             if (!d.name || !d.land || !d.rate) { showToast(lang === 'bn' ? "নাম, জমি, রেট দিন" : "Fill Name, Land, Rate", "error"); return; } 
             const res = await api('/api/saveProfile', d); 
-            if (res.success) { 
-                await init(); renderS_tbl(); 
-                document.getElementById('sName').value = ''; document.getElementById('sLand').value = ''; document.getElementById('sRate').value = ''; document.getElementById('sHari').value = ''; document.getElementById('sOldName').value = ''; document.getElementById('sOldLand').value = ''; document.getElementById('sOldRate').value = ''; 
-                showToast(lang === 'bn' ? "প্রোফাইল সেভ হয়েছে!" : "Profile Saved!", "success"); 
-            } else {
-                showToast("Error: " + res.message, "error");
-            }
+            if (res.success) { await init(); renderS_tbl(); document.getElementById('sName').value = ''; document.getElementById('sLand').value = ''; document.getElementById('sRate').value = ''; document.getElementById('sHari').value = ''; document.getElementById('sOldName').value = ''; document.getElementById('sOldLand').value = ''; document.getElementById('sOldRate').value = ''; showToast(lang === 'bn' ? "প্রোফাইল সেভ হয়েছে!" : "Profile Saved!", "success"); } else { showToast("Error: " + res.message, "error"); }
         };
 
         const delP = (n, l, r) => { 
@@ -555,13 +368,8 @@
             });
         };
 
-        // Global Click Listener for Dropdowns
-        document.addEventListener('click', e => {
-            if (!e.target.closest('#entryName') && !e.target.closest('#nameDD')) document.getElementById('nameDD').classList.add('hidden');
-            if (!e.target.closest('#searchName') && !e.target.closest('#searchDD')) document.getElementById('searchDD').classList.add('hidden');
-        });
+        document.addEventListener('click', e => { if (!e.target.closest('#entryName') && !e.target.closest('#nameDD')) document.getElementById('nameDD').classList.add('hidden'); if (!e.target.closest('#searchName') && !e.target.closest('#searchDD')) document.getElementById('searchDD').classList.add('hidden'); });
 
-        // Session Check
         if (localStorage.getItem('s')) { const s = JSON.parse(localStorage.getItem('s')); user = { name: s.u }; document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); init(); startIdleMonitor(); }
     </script>
 </body>
