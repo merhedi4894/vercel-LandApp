@@ -117,10 +117,11 @@
     </div>
 
     <script>
-    let profiles = []; // এখানে ডাটাবেস থেকে আসা প্রোফাইল থাকবে
+    // গ্লোবাল ভেরিয়েবল
+    window.allProfiles = []; 
     let currentUser = "";
 
-    // API Call Function
+    // API কল করার ফাংশন
     async function api(url, data = {}) {
         try {
             const res = await fetch(url, {
@@ -128,15 +129,14 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            const result = await res.json();
-            console.log("API Response from " + url, result); // কনসোলে ডাটা চেক করার জন্য
-            return result;
-        } catch (e) { 
+            return await res.json();
+        } catch (e) {
             console.error("API Error:", e);
-            return { success: false, message: "সার্ভার কানেকশন এরর!" }; 
+            return { success: false };
         }
     }
 
+    // লগইন ফাংশন
     async function login() {
         const u = document.getElementById('username').value;
         const p = document.getElementById('password').value;
@@ -146,95 +146,92 @@
             document.getElementById('userDisplay').innerText = `ইউজার: ${currentUser}`;
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('mainPage').classList.remove('hidden');
-            loadData(); // লগইন হওয়ার পর ডাটা লোড হবে
+            
+            // লগইন সফল হলে ডাটা লোড হবে
+            const dataRes = await api('/api/getInitData');
+            window.allProfiles = dataRes.profiles || [];
+            console.log("ডাটাবেস থেকে পাওয়া প্রোফাইল:", window.allProfiles);
+            renderProfileList();
         } else {
             document.getElementById('loginMsg').innerText = res.message;
         }
     }
 
-    async function loadData() {
-        const res = await api('/api/getInitData');
-        // ব্যাকএন্ড থেকে profiles যদি সরাসরি আসে অথবা searchOptions এর ভেতর থাকে
-        profiles = res.profiles || (res.searchOptions ? res.searchOptions.profiles : []) || [];
-        console.log("Loaded Profiles:", profiles);
-        renderProfileList();
-    }
-
-    // --- অতি শক্তিশালী ফিল্টারিং কোড ---
+    // --- ফিল্টারিং এর মূল কোড (সবচেয়ে সহজ পদ্ধতিতে) ---
     const searchInput = document.getElementById('entrySearch');
     const dropdown = document.getElementById('dropdownList');
 
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function() {
-            const val = this.value.trim().toLowerCase();
-            dropdown.innerHTML = '';
-            
-            if(!val) {
-                dropdown.classList.add('hidden');
-                return;
-            }
+    // ইনপুট বক্সে টাইপ করলে এই ফাংশনটি চলবে
+    searchInput.onkeyup = function() {
+        const val = this.value.trim().toLowerCase();
+        dropdown.innerHTML = ''; // আগের লিস্ট ক্লিয়ার করা
+        
+        if (val === '') {
+            dropdown.classList.add('hidden');
+            return;
+        }
 
-            // প্রোফাইল লিস্ট থেকে ফিল্টার করা হচ্ছে
-            const matches = profiles.filter(p => {
-                return p.name && p.name.toLowerCase().includes(val);
+        // ফিল্টার করা: নাম বা জমির পরিমাণ দিয়ে খোঁজা
+        const matches = window.allProfiles.filter(p => 
+            p.name.toLowerCase().includes(val)
+        );
+
+        if (matches.length > 0) {
+            dropdown.classList.remove('hidden');
+            matches.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'p-3 hover:bg-blue-100 cursor-pointer border-b text-sm';
+                div.innerHTML = `<strong>${p.name}</strong> - <span class="text-gray-600">${p.land} শতক</span>`;
+                
+                // ক্লিক করলে ইনপুট বক্সে ডাটা বসে যাবে
+                div.onclick = function() {
+                    searchInput.value = p.name;
+                    document.getElementById('dispLand').value = p.land;
+                    document.getElementById('dispRate').value = p.rate;
+                    dropdown.classList.add('hidden');
+                };
+                dropdown.appendChild(div);
             });
-
-            if(matches.length > 0) {
-                dropdown.classList.remove('hidden');
-                matches.forEach(p => {
-                    const item = document.createElement('div');
-                    item.className = 'dropdown-item font-medium border-b hover:bg-blue-50 p-2 cursor-pointer';
-                    item.innerHTML = `<span class="text-blue-700">${p.name}</span> <small class="text-gray-500">(${p.land} শতক)</small>`;
-                    
-                    item.onclick = function() {
-                        searchInput.value = p.name;
-                        document.getElementById('dispLand').value = p.land;
-                        document.getElementById('dispRate').value = p.rate;
-                        dropdown.classList.add('hidden');
-                    };
-                    dropdown.appendChild(item);
-                });
-            } else {
-                // যদি কোনো মিল না পাওয়া যায়
-                dropdown.classList.remove('hidden');
-                dropdown.innerHTML = '<div class="p-2 text-gray-400 italic text-sm">কোনো নাম পাওয়া যায়নি</div>';
-            }
-        });
-    }
+        } else {
+            dropdown.classList.remove('hidden');
+            dropdown.innerHTML = '<div class="p-3 text-gray-400 italic">কোনো নাম মেলেনি</div>';
+        }
+    };
 
     // ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হবে
-    document.addEventListener('click', (e) => {
-        if(!e.target.closest('#searchContainer')) {
+    window.onclick = function(event) {
+        if (!event.target.matches('#entrySearch')) {
             dropdown.classList.add('hidden');
         }
-    });
+    };
 
-    // প্রোফাইল সেভ ফাংশন
+    // প্রোফাইল সেভ এবং রেন্ডার করার ফাংশন
     async function saveProfile() {
         const name = document.getElementById('pName').value;
         const land = document.getElementById('pLand').value;
         const rate = document.getElementById('pRate').value;
-        
-        if(!name || !land) return alert("নাম ও জমির পরিমাণ দিন");
+        if(!name || !land) return alert("সব তথ্য দিন");
         
         const res = await api('/api/saveProfile', { name, land, rate });
         if(res.success) {
+            alert("প্রোফাইল সেভ হয়েছে");
+            const dataRes = await api('/api/getInitData');
+            window.allProfiles = dataRes.profiles || [];
+            renderProfileList();
             document.getElementById('pName').value = '';
             document.getElementById('pLand').value = '';
             document.getElementById('pRate').value = '';
-            loadData(); // লিস্ট আপডেট
         }
     }
 
     function renderProfileList() {
-        const container = document.getElementById('pList');
-        if(!container) return;
-        container.innerHTML = '';
-        profiles.forEach(p => {
-            container.innerHTML += `
-            <div class="flex justify-between items-center bg-white p-2 mb-2 border rounded shadow-sm text-sm">
-                <div><strong>${p.name}</strong> <br> <span class="text-xs text-gray-500">${p.land} শতক</span></div>
-                <button onclick="delProfile('${p.name}', ${p.land})" class="text-red-500 font-bold">✕</button>
+        const list = document.getElementById('pList');
+        list.innerHTML = '';
+        window.allProfiles.forEach(p => {
+            list.innerHTML += `
+            <div class="flex justify-between bg-white p-2 mb-2 border rounded text-xs shadow-sm">
+                <span>${p.name} (${p.land} শতক)</span>
+                <button onclick="delProfile('${p.name}', ${p.land})" class="text-red-500 font-bold">ডিলিট</button>
             </div>`;
         });
     }
@@ -242,7 +239,9 @@
     async function delProfile(name, land) {
         if(confirm("মুছে ফেলবেন?")) {
             await api('/api/deleteProfile', { name, land });
-            loadData();
+            const dataRes = await api('/api/getInitData');
+            window.allProfiles = dataRes.profiles || [];
+            renderProfileList();
         }
     }
 
