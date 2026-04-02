@@ -23,7 +23,7 @@
         .suggest-item:hover { background: #f0f7ff; color: #1d4ed8; }
         
         /* Vercel Toolbar Hide */
-        #vercel-live-feedback, [id^="vercel-"], [class^="vercel-"] {
+        #vercel-live-feedback, [id^="vercel-"], [class^="vercel-"], [data-vercel-toolbar] {
             display: none !important;
             visibility: hidden !important;
         }
@@ -32,7 +32,7 @@
 <body class="bg-gray-100 min-h-screen">
 
     <div id="loginArea" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm border border-gray-200">
             <h2 class="text-2xl font-bold mb-6 text-center text-blue-700">অ্যাডমিন লগইন</h2>
             <input type="text" id="user" placeholder="ইউজারনেম" class="w-full p-3 mb-4 border rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
             <input type="password" id="pass" placeholder="পাসওয়ার্ড" class="w-full p-3 mb-6 border rounded-lg outline-none focus:ring-2 focus:ring-blue-400">
@@ -43,10 +43,10 @@
 
     <div id="mainArea" class="hidden p-4 md:p-8 container mx-auto">
         <nav class="flex justify-between items-center bg-blue-800 text-white p-4 rounded-xl mb-8 shadow-md">
-            <h1 class="text-lg font-bold">লিজ ম্যানেজমেন্ট সিস্টেম</h1>
+            <h1 class="text-lg font-bold tracking-wide">লিজ ম্যানেজমেন্ট সিস্টেম</h1>
             <div class="flex items-center gap-4">
-                <span id="displayUser" class="text-blue-200"></span>
-                <button onclick="location.reload()" class="bg-red-500 px-4 py-1 rounded-lg text-sm font-bold hover:bg-red-600">লগআউট</button>
+                <span id="displayUser" class="text-blue-200 font-medium"></span>
+                <button onclick="location.reload()" class="bg-red-500 px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-red-600">লগআউট</button>
             </div>
         </nav>
 
@@ -63,12 +63,18 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="resLand" placeholder="জমি (শতক)" readonly class="p-3 bg-gray-50 border rounded-lg font-bold">
-                        <input type="text" id="resRate" placeholder="হার (টাকা)" readonly class="p-3 bg-gray-50 border rounded-lg font-bold">
+                        <div>
+                            <label class="text-xs text-gray-400">জমির পরিমাণ</label>
+                            <input type="text" id="resLand" readonly class="w-full p-3 bg-gray-50 border rounded-lg font-bold">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400">হার (টাকা)</label>
+                            <input type="text" id="resRate" readonly class="w-full p-3 bg-gray-50 border rounded-lg font-bold">
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="inYear" placeholder="হারি বছর (২০২৬)" class="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <input type="text" id="inYear" placeholder="হারি বছর" class="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
                         <input type="number" id="inTk" placeholder="টাকা প্রদান" class="p-3 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none">
                     </div>
 
@@ -121,11 +127,11 @@
 
         async function fetchInitData() {
             const res = await api('/api/getInitData', {});
+            // ব্যাকএন্ড থেকে আসা প্রোফাইল অ্যারে
             profiles = res.profiles || [];
             renderProfileList();
         }
 
-        // --- ফিল্টারিং সিস্টেম ---
         function doSearch(val) {
             const query = val.toLowerCase().trim();
             const box = document.getElementById('suggestionBox');
@@ -142,8 +148,8 @@
                 box.classList.remove('hidden');
                 filtered.forEach(p => {
                     const div = document.createElement('div');
-                    div.className = 'suggest-item';
-                    div.innerHTML = `<strong>${p.name}</strong> <span class="text-xs text-gray-500 float-right mt-1">${p.land} শতক</span>`;
+                    div.className = 'suggest-item font-medium';
+                    div.innerHTML = `<span>${p.name}</span> <span class="text-xs text-gray-400 float-right mt-1">${p.land} শতক</span>`;
                     div.onclick = () => {
                         document.getElementById('searchName').value = p.name;
                         document.getElementById('resLand').value = p.land;
@@ -157,7 +163,6 @@
             }
         }
 
-        // ক্লিক হ্যান্ডলার
         document.addEventListener('click', (e) => {
             if(!document.getElementById('searchContainer').contains(e.target)) {
                 document.getElementById('suggestionBox').classList.add('hidden');
@@ -187,7 +192,7 @@
                 land: document.getElementById('pLand').value,
                 rate: document.getElementById('pRate').value
             };
-            if(!d.name || !d.land) return alert("তথ্য পূরণ করুন!");
+            if(!d.name || !d.land) return alert("তথ্য দিন!");
             await api('/api/saveProfile', d);
             document.getElementById('pName').value = '';
             document.getElementById('pLand').value = '';
@@ -208,7 +213,7 @@
         }
 
         async function delProfile(name, land) {
-            if(confirm("প্রোফাইলটি মুছে ফেলবেন?")) {
+            if(confirm("মুছে ফেলবেন?")) {
                 await api('/api/deleteProfile', { name, land });
                 fetchInitData();
             }
