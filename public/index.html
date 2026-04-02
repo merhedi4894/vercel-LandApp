@@ -20,10 +20,10 @@
         .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
         
         /* Modal Overlay - Base z-index */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; }
         
         /* FIX: Confirm Modal will be ON TOP of Settings Modal */
-        #confirmModal { z-index: 10000; }
+        #confirmModal { z-index: 10000; background: rgba(0,0,0,0.8); }
 
         .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #0ea5e9; max-height: 200px; overflow-y: auto; z-index: 50; border-radius: 0 0 8px 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
@@ -106,6 +106,7 @@
                 <form id="landForm" class="grid grid-cols-2 md:grid-cols-8 gap-3 items-end">
                     <div class="relative col-span-2">
                         <label class="text-xs font-semibold text-gray-600" data-lang="name">নাম</label>
+                        <!-- Added oninput for filter -->
                         <input type="text" id="entryName" class="input-field w-full px-3 py-2 rounded-lg bg-white" autocomplete="off" required>
                         <div id="nameDD" class="hidden dropdown-list"></div>
                     </div>
@@ -140,6 +141,7 @@
                 <h3 class="font-bold text-primary mb-3" data-lang="search_title">Search</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
                     <div class="relative">
+                        <!-- Added oninput for filter -->
                         <input type="text" id="searchName" placeholder="Name" class="input-field w-full px-3 py-2 rounded-lg bg-white" autocomplete="off">
                         <input type="hidden" id="searchNameVal" value="ALL">
                         <div id="searchDD" class="hidden dropdown-list"></div>
@@ -149,7 +151,7 @@
                     <div class="flex gap-2">
                         <button onclick="getDue()" class="btn btn-success px-3 rounded-lg flex-1" data-lang="due_btn">Due</button>
                         <button onclick="getData()" class="btn bg-purple-600 px-3 rounded-lg flex-1" data-lang="data_btn">Data</button>
-                        <button onclick="delData()" class="btn btn-danger px-3 rounded-lg" data-lang="del_btn">Delete</button>
+                        <button onclick="delData()" class="btn btn-danger px-3 rounded-lg" id="delBtnMain" data-lang="del_btn">Delete</button>
                     </div>
                 </div>
                 <div id="resultArea" class="hidden mt-4">
@@ -206,11 +208,20 @@
             en: { login_title: "Login", login_btn: "Login", app_title: "Land Lease Management", settings_btn: "Settings", logout_btn: "Logout", new_entry_title: "New Entry", name: "Name", land: "Land", hari_calc: "Lease Calc", rate: "Rate", tk_given: "Amount", lease_year: "Year", save_btn: "Save", save_success: "Saved!", search_title: "Search", all_lands: "All Lands", all_years: "All Years", due_btn: "Due", data_btn: "Data", del_btn: "Delete", t_date: "Date", t_name: "Name", t_land: "Land", t_rate: "Rate", t_total: "Total", t_given: "Given", t_year: "Year", settings_title: "Settings: Profiles", saved_pro: "Saved Profiles", hari_start: "Start", action: "Action" }
         };
 
-        const setLang = () => { document.querySelectorAll('[data-lang]').forEach(el => { const k = el.getAttribute('data-lang'); if(trans[lang][k]) el.innerText = trans[lang][k]; }); document.getElementById('langBtn').innerText = lang === 'bn' ? 'EN' : 'বাং'; };
+        const setLang = () => { 
+            document.querySelectorAll('[data-lang]').forEach(el => { const k = el.getAttribute('data-lang'); if(trans[lang][k]) el.innerText = trans[lang][k]; }); 
+            document.getElementById('langBtn').innerText = lang === 'bn' ? 'EN' : 'বাং'; 
+            
+            // Force update specific buttons if needed
+            const delBtnMain = document.getElementById('delBtnMain');
+            if(delBtnMain) delBtnMain.innerText = lang === 'bn' ? 'ডিলিট' : 'Delete';
+        };
+        
         const toggleLang = () => { lang = lang === 'bn' ? 'en' : 'bn'; setLang(); renderS_tbl(); };
 
         let user = null, profiles = [], names = [], sMap = {}, yMap = {};
         let confirmCallback = null; 
+        let profileNames = []; // Global to store entry names
         
         const toEnglishDigits = (str) => { if (!str) return str; const map = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' }; return String(str).replace(/[০-৯]/g, d => map[d]); };
         
@@ -289,6 +300,7 @@
 
         // Load Data
         async function init() {
+            // Reset fields
             document.getElementById('nameDD').innerHTML = '';
             document.getElementById('searchDD').innerHTML = '';
             resetSearchDropdowns();
@@ -302,16 +314,62 @@
             sMap = opt.landMap || {}; 
             yMap = opt.yearMap || {}; 
             
-            const ndd = document.getElementById('nameDD'); 
-            const profileNames = [...new Set(profiles.map(p => p.name))].sort();
-            profileNames.forEach(n => ndd.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer border-b" onclick="setEntryName('${n}')">${n}</div>`);
+            // Store profile names globally for entry filter
+            profileNames = [...new Set(profiles.map(p => p.name))].sort();
             
-            const sdd = document.getElementById('searchDD'); 
-            sdd.innerHTML = `<div class="p-2 hover:bg-gray-100 cursor-pointer font-bold text-blue-600" onclick="setSearchName('ALL', 'All Names')">All Names</div>`; 
-            names.forEach(n => sdd.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer" onclick="setSearchName('${n}', '${n}')">${n}</div>`);
-
-            if (!document.getElementById('settingsModal').classList.contains('hidden')) renderS_tbl(); 
+            // Setup Language and Dropdown Filters
             setLang();
+            setupDropdownFilters();
+        }
+
+        // --- DROPDOWN FILTER LOGIC ---
+        function setupDropdownFilters() {
+            const entryInput = document.getElementById('entryName');
+            const entryDD = document.getElementById('nameDD');
+            const searchInput = document.getElementById('searchName');
+            const searchDD = document.getElementById('searchDD');
+
+            // Helper to render filtered entry list
+            const renderEntryList = (val) => {
+                entryDD.innerHTML = '';
+                const filtered = profileNames.filter(n => n.toLowerCase().includes(val));
+                if (filtered.length === 0) {
+                    entryDD.innerHTML = '<div class="p-2 text-gray-400 text-center">No match found</div>';
+                } else {
+                    filtered.forEach(n => {
+                        entryDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer border-b" onclick="setEntryName('${n}')">${n}</div>`;
+                    });
+                }
+                entryDD.classList.remove('hidden');
+            };
+
+            // Helper to render filtered search list
+            const renderSearchList = (val) => {
+                searchDD.innerHTML = '';
+                // Add "All Names" if search is empty
+                if (val === "") {
+                    searchDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer font-bold text-blue-600" onclick="setSearchName('ALL', 'All Names')">All Names</div>`;
+                }
+                
+                const filtered = names.filter(n => n.toLowerCase().includes(val));
+                if (filtered.length === 0 && val !== "") {
+                     // Only show "No match" if something is typed and nothing found, else just show nothing or All Names
+                     if(val !== "") searchDD.innerHTML = '<div class="p-2 text-gray-400 text-center">No match found</div>';
+                } else {
+                    filtered.forEach(n => {
+                        searchDD.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer" onclick="setSearchName('${n}', '${n}')">${n}</div>`;
+                    });
+                }
+                searchDD.classList.remove('hidden');
+            };
+
+            // Entry Name Listeners
+            entryInput.addEventListener('focus', () => { renderEntryList(entryInput.value.toLowerCase()); entryInput.select(); });
+            entryInput.addEventListener('input', () => renderEntryList(entryInput.value.toLowerCase()));
+
+            // Search Name Listeners
+            searchInput.addEventListener('focus', () => { renderSearchList(searchInput.value.toLowerCase()); searchInput.select(); });
+            searchInput.addEventListener('input', () => renderSearchList(searchInput.value.toLowerCase()));
         }
 
         function resetSearchDropdowns() {
@@ -497,10 +555,11 @@
             });
         };
 
-        // Listeners
-        document.getElementById('entryName').addEventListener('focus', function() { document.getElementById('nameDD').classList.remove('hidden'); this.select(); });
-        document.getElementById('searchName').addEventListener('focus', function() { document.getElementById('searchDD').classList.remove('hidden'); this.select(); });
-        document.addEventListener('click', e => { if (!e.target.closest('#entryName') && !e.target.closest('#nameDD')) document.getElementById('nameDD').classList.add('hidden'); if (!e.target.closest('#searchName') && !e.target.closest('#searchDD')) document.getElementById('searchDD').classList.add('hidden'); });
+        // Global Click Listener for Dropdowns
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#entryName') && !e.target.closest('#nameDD')) document.getElementById('nameDD').classList.add('hidden');
+            if (!e.target.closest('#searchName') && !e.target.closest('#searchDD')) document.getElementById('searchDD').classList.add('hidden');
+        });
 
         // Session Check
         if (localStorage.getItem('s')) { const s = JSON.parse(localStorage.getItem('s')); user = { name: s.u }; document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); init(); startIdleMonitor(); }
