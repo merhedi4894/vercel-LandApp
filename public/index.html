@@ -10,21 +10,25 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         body { background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%); min-height: 100vh; }
-        .input-field { transition: all 0.2s; border: 2px solid #e2e8f0; }
+        .input-field { transition: all 0.2s; border: 2px solid #e2e8f0; background-color: white; }
         .input-field:focus { border-color: #0ea5e9; outline: none; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15); }
         .btn { transition: all 0.2s; color: white; }
         .btn:hover { transform: translateY(-1px); }
         .btn-primary { background: linear-gradient(135deg, #1e3a5f, #2d5a87); }
         .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-success { background: linear-gradient(135deg, #10b981, #059669'); }
+        /* FIX: Removed quote from gradient */
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; }
         
+        /* Confirm Modal on top */
         #confirmModal { z-index: 10000; background: rgba(0,0,0,0.8); }
 
-        .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #0ea5e9; max-height: 200px; overflow-y: auto; z-index: 50; border-radius: 0 0 8px 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        /* Dropdown: z-index increased to ensure it stays on top */
+        .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #0ea5e9; max-height: 200px; overflow-y: auto; z-index: 999; border-radius: 0 0 8px 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
+        /* Toast Notification Center */
         #toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
         .toast { padding: 15px 30px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out; text-align: center; min-width: 250px; font-size: 18px; pointer-events: auto; }
         .toast.success { background-color: #10b981; }
@@ -93,7 +97,8 @@
             </div>
             <div class="flex gap-2">
                 <button onclick="toggleLang()" id="langBtn" class="btn bg-yellow-500 text-black px-3 py-2 rounded-lg text-sm font-bold">EN</button>
-                <button onclick="openSettings()" class="btn bg-white text-primary px-3 py-2 rounded-lg text-sm font-bold" data-lang="settings_btn">Settings</button>
+                <!-- Added type="button" -->
+                <button type="button" onclick="openSettings()" class="btn bg-white text-primary px-3 py-2 rounded-lg text-sm font-bold" data-lang="settings_btn">Settings</button>
                 <button onclick="logout()" class="btn bg-red-500/80 px-3 py-2 rounded-lg text-sm" data-lang="logout_btn">Logout</button>
             </div>
         </div>
@@ -105,12 +110,12 @@
                 <form id="landForm" class="grid grid-cols-2 md:grid-cols-8 gap-3 items-end">
                     <div class="relative col-span-2">
                         <label class="text-xs font-semibold text-gray-600" data-lang="name">নাম</label>
-                        <input type="text" id="entryName" class="input-field w-full px-3 py-2 rounded-lg bg-white" autocomplete="off" required>
+                        <input type="text" id="entryName" class="input-field w-full px-3 py-2 rounded-lg" autocomplete="off" required>
                         <div id="nameDD" class="hidden dropdown-list"></div>
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="land">জমি</label>
-                        <select id="entryLand" class="input-field w-full px-3 py-2 rounded-lg bg-white" required onchange="updateRate()"><option value="">Select</option></select>
+                        <select id="entryLand" class="input-field w-full px-3 py-2 rounded-lg" required onchange="updateRate()"><option value="">Select</option></select>
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="hari_calc">হারি গণনা</label>
@@ -118,17 +123,15 @@
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="rate">রেট</label>
-                        <select id="entryRate" class="input-field w-full px-3 py-2 rounded-lg bg-white" required><option value="">Select</option></select>
+                        <select id="entryRate" class="input-field w-full px-3 py-2 rounded-lg" required><option value="">Select</option></select>
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="tk_given">টাকা</label>
-                        <!-- Changed to type="number" -->
                         <input type="number" id="entryTk" class="input-field w-full px-3 py-2 rounded-lg" placeholder="e.g. 500" required>
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-600" data-lang="lease_year">বছর</label>
-                        <!-- Changed to type="number" -->
-                        <input type="number" id="entryYear" class="input-field w-full px-3 py-2 rounded-lg bg-white" placeholder="e.g. 2025" required>
+                        <input type="number" id="entryYear" class="input-field w-full px-3 py-2 rounded-lg" placeholder="e.g. 2025" required>
                     </div>
                     <div>
                         <button type="submit" id="saveEntryBtn" class="btn btn-primary w-full py-2 rounded-lg font-semibold" data-lang="save_btn">Save</button>
@@ -141,13 +144,14 @@
                 <h3 class="font-bold text-primary mb-3" data-lang="search_title">Search</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
                     <div class="relative">
-                        <input type="text" id="searchName" placeholder="Name" class="input-field w-full px-3 py-2 rounded-lg bg-white" autocomplete="off">
+                        <input type="text" id="searchName" placeholder="Name" class="input-field w-full px-3 py-2 rounded-lg" autocomplete="off">
                         <input type="hidden" id="searchNameVal" value="ALL">
                         <div id="searchDD" class="hidden dropdown-list"></div>
                     </div>
-                    <select id="searchLand" class="input-field px-3 py-2 rounded-lg bg-white"><option value="ALL" data-lang="all_lands">All Lands</option></select>
-                    <select id="searchYear" class="input-field px-3 py-2 rounded-lg bg-white"><option value="ALL" data-lang="all_years">All Years</option></select>
+                    <select id="searchLand" class="input-field px-3 py-2 rounded-lg"><option value="ALL" data-lang="all_lands">All Lands</option></select>
+                    <select id="searchYear" class="input-field px-3 py-2 rounded-lg"><option value="ALL" data-lang="all_years">All Years</option></select>
                     <div class="flex gap-2">
+                        <!-- Button color fixed via CSS -->
                         <button onclick="getDue()" class="btn btn-success px-3 rounded-lg flex-1" data-lang="due_btn">Due</button>
                         <button onclick="getData()" class="btn bg-purple-600 px-3 rounded-lg flex-1" data-lang="data_btn">Data</button>
                         <button onclick="delData()" class="btn btn-danger px-3 rounded-lg" id="delBtnMain" data-lang="del_btn">Delete</button>
@@ -258,41 +262,22 @@
         const setEntryName = n => { document.getElementById('entryName').value = n; document.getElementById('nameDD').classList.add('hidden'); const m = profiles.filter(p => p.name === n); const lSel = document.getElementById('entryLand'); lSel.innerHTML = '<option value="">Select</option>'; m.forEach(p => lSel.innerHTML += `<option value="${p.land}">${p.land}</option>`); if (m.length === 1) { lSel.value = m[0].land; updateRate(); } };
         const updateRate = () => { const n = document.getElementById('entryName').value, l = document.getElementById('entryLand').value; const p = profiles.find(x => x.name === n && x.land == l); if (p) { document.getElementById('entryRate').innerHTML = `<option value="${p.rate}">${p.rate}</option>`; document.getElementById('entryRate').value = p.rate; document.getElementById('entryHari').value = p.hariBorsho || "-"; } else { document.getElementById('entryRate').innerHTML = '<option value="">Select</option>'; document.getElementById('entryHari').value = ""; } };
 
-        // Save Entry - Updated Logic
         document.getElementById('landForm').addEventListener('submit', async e => {
             e.preventDefault();
             const btn = document.getElementById('saveEntryBtn');
             const originalText = btn.innerText;
-            
             btn.innerText = lang === 'bn' ? "সেভ হচ্ছে..." : "Saving...";
             btn.disabled = true;
 
-            const name = document.getElementById('entryName').value;
-            const land = document.getElementById('entryLand').value;
-            const rate = document.getElementById('entryRate').value;
-            
-            // Get values from number inputs
-            const tkRaw = document.getElementById('entryTk').value;
-            const yearRaw = document.getElementById('entryYear').value;
+            const name = document.getElementById('entryName').value; const land = document.getElementById('entryLand').value; const rate = document.getElementById('entryRate').value;
+            const tkRaw = document.getElementById('entryTk').value; const yearRaw = document.getElementById('entryYear').value;
 
-            // 1. Check if ANY field is empty
-            if (!name || !land || !rate || !tkRaw || !yearRaw) {
-                showToast(lang === 'bn' ? "সব ঘর পূরণ করুন" : "Fill all fields", "error");
-                btn.innerText = originalText; btn.disabled = false; return;
-            }
+            if (!name || !land || !rate || !tkRaw || !yearRaw) { showToast(lang === 'bn' ? "সব ঘর পূরণ করুন" : "Fill all fields", "error"); btn.innerText = originalText; btn.disabled = false; return; }
 
-            // 2. Convert and Validate Numbers
-            const tkGiven = toEnglishDigits(tkRaw);
-            const hariYear = toEnglishDigits(yearRaw);
-
-            // Check if they are valid numbers
-            if (isNaN(tkGiven) || isNaN(hariYear)) {
-                showToast(lang === 'bn' ? "টাকা ও বছরে শুধুমাত্র সংখ্যা দিন" : "Amount and Year must be numbers", "error");
-                btn.innerText = originalText; btn.disabled = false; return;
-            }
+            const tkGiven = toEnglishDigits(tkRaw); const hariYear = toEnglishDigits(yearRaw);
+            if (isNaN(tkGiven) || isNaN(hariYear)) { showToast(lang === 'bn' ? "টাকা ও বছরে শুধুমাত্র সংখ্যা দিন" : "Amount and Year must be numbers", "error"); btn.innerText = originalText; btn.disabled = false; return; }
 
             const d = { name, land, rate, tkGiven, hariYear, loggedInUser: user.name };
-
             const res = await api('/api/saveFormData', d);
             btn.innerText = originalText; btn.disabled = false;
             if (res.success) { e.target.reset(); showToast(lang === 'bn' ? "সেভ সফল হয়েছে!" : "Saved Successfully!", "success"); init(); }
