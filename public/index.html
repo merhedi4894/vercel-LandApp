@@ -117,47 +117,56 @@
     </div>
 
     <script>
-        let profiles = [];
-        let currentUser = "";
+    let profiles = []; // এখানে ডাটাবেস থেকে আসা প্রোফাইল থাকবে
+    let currentUser = "";
 
-        async function api(url, data = {}) {
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                return await res.json();
-            } catch (e) { return { success: false, message: "সার্ভার এরর!" }; }
+    // API Call Function
+    async function api(url, data = {}) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            console.log("API Response from " + url, result); // কনসোলে ডাটা চেক করার জন্য
+            return result;
+        } catch (e) { 
+            console.error("API Error:", e);
+            return { success: false, message: "সার্ভার কানেকশন এরর!" }; 
         }
+    }
 
-        async function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const res = await api('/api/login', { username: u, password: p });
-            if(res.success) {
-                currentUser = res.user.username;
-                document.getElementById('userDisplay').innerText = `ইউজার: ${currentUser}`;
-                document.getElementById('loginPage').classList.add('hidden');
-                document.getElementById('mainPage').classList.remove('hidden');
-                loadData();
-            } else {
-                document.getElementById('loginMsg').innerText = res.message;
-            }
+    async function login() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        const res = await api('/api/login', { username: u, password: p });
+        if(res.success) {
+            currentUser = res.user.username;
+            document.getElementById('userDisplay').innerText = `ইউজার: ${currentUser}`;
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainPage').classList.remove('hidden');
+            loadData(); // লগইন হওয়ার পর ডাটা লোড হবে
+        } else {
+            document.getElementById('loginMsg').innerText = res.message;
         }
+    }
 
-        async function loadData() {
-            const res = await api('/api/getInitData');
-            profiles = res.profiles || [];
-            renderProfileList();
-        }
+    async function loadData() {
+        const res = await api('/api/getInitData');
+        // ব্যাকএন্ড থেকে profiles যদি সরাসরি আসে অথবা searchOptions এর ভেতর থাকে
+        profiles = res.profiles || (res.searchOptions ? res.searchOptions.profiles : []) || [];
+        console.log("Loaded Profiles:", profiles);
+        renderProfileList();
+    }
 
-        // --- স্মার্ট ফিল্টারিং ড্রপডাউন কোড ---
-        const searchInput = document.getElementById('entrySearch');
-        const dropdown = document.getElementById('dropdownList');
+    // --- অতি শক্তিশালী ফিল্টারিং কোড ---
+    const searchInput = document.getElementById('entrySearch');
+    const dropdown = document.getElementById('dropdownList');
 
-        searchInput.addEventListener('input', (e) => {
-            const val = e.target.value.trim().toLowerCase();
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const val = this.value.trim().toLowerCase();
             dropdown.innerHTML = '';
             
             if(!val) {
@@ -165,16 +174,19 @@
                 return;
             }
 
-            // নাম ফিল্টার করা হচ্ছে
-            const matches = profiles.filter(p => p.name.toLowerCase().includes(val));
+            // প্রোফাইল লিস্ট থেকে ফিল্টার করা হচ্ছে
+            const matches = profiles.filter(p => {
+                return p.name && p.name.toLowerCase().includes(val);
+            });
 
             if(matches.length > 0) {
                 dropdown.classList.remove('hidden');
                 matches.forEach(p => {
                     const item = document.createElement('div');
-                    item.className = 'dropdown-item font-medium';
-                    item.innerHTML = `<span class="text-blue-600">${p.name}</span> <span class="text-gray-400 text-xs ml-2">(${p.land} শতক)</span>`;
-                    item.onclick = () => {
+                    item.className = 'dropdown-item font-medium border-b hover:bg-blue-50 p-2 cursor-pointer';
+                    item.innerHTML = `<span class="text-blue-700">${p.name}</span> <small class="text-gray-500">(${p.land} শতক)</small>`;
+                    
+                    item.onclick = function() {
                         searchInput.value = p.name;
                         document.getElementById('dispLand').value = p.land;
                         document.getElementById('dispRate').value = p.rate;
@@ -183,72 +195,73 @@
                     dropdown.appendChild(item);
                 });
             } else {
-                dropdown.classList.add('hidden');
+                // যদি কোনো মিল না পাওয়া যায়
+                dropdown.classList.remove('hidden');
+                dropdown.innerHTML = '<div class="p-2 text-gray-400 italic text-sm">কোনো নাম পাওয়া যায়নি</div>';
             }
         });
+    }
 
-        // ড্রপডাউনের বাইরে ক্লিক করলে সেটি বন্ধ হয়ে যাবে
-        document.addEventListener('click', (e) => {
-            if(!document.getElementById('searchContainer').contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
-
-        async function saveData() {
-            const data = {
-                name: searchInput.value,
-                land: document.getElementById('dispLand').value,
-                rate: document.getElementById('dispRate').value,
-                hariYear: document.getElementById('hariYear').value,
-                tkGiven: document.getElementById('tkGiven').value,
-                loggedInUser: currentUser
-            };
-            if(!data.name || !data.hariYear) return alert("দয়া করে নাম ও বছর লিখুন!");
-            const res = await api('/api/saveFormData', data);
-            if(res.success) {
-                alert("ডাটা সেভ হয়েছে!");
-                document.getElementById('tkGiven').value = '';
-                searchInput.value = '';
-                document.getElementById('dispLand').value = '';
-                document.getElementById('dispRate').value = '';
-            }
+    // ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হবে
+    document.addEventListener('click', (e) => {
+        if(!e.target.closest('#searchContainer')) {
+            dropdown.classList.add('hidden');
         }
+    });
 
-        async function saveProfile() {
-            const p = {
-                name: document.getElementById('pName').value,
-                land: document.getElementById('pLand').value,
-                rate: document.getElementById('pRate').value
-            };
-            if(!p.name || !p.land) return alert("তথ্য পূরণ করুন!");
-            await api('/api/saveProfile', p);
+    // প্রোফাইল সেভ ফাংশন
+    async function saveProfile() {
+        const name = document.getElementById('pName').value;
+        const land = document.getElementById('pLand').value;
+        const rate = document.getElementById('pRate').value;
+        
+        if(!name || !land) return alert("নাম ও জমির পরিমাণ দিন");
+        
+        const res = await api('/api/saveProfile', { name, land, rate });
+        if(res.success) {
             document.getElementById('pName').value = '';
             document.getElementById('pLand').value = '';
             document.getElementById('pRate').value = '';
+            loadData(); // লিস্ট আপডেট
+        }
+    }
+
+    function renderProfileList() {
+        const container = document.getElementById('pList');
+        if(!container) return;
+        container.innerHTML = '';
+        profiles.forEach(p => {
+            container.innerHTML += `
+            <div class="flex justify-between items-center bg-white p-2 mb-2 border rounded shadow-sm text-sm">
+                <div><strong>${p.name}</strong> <br> <span class="text-xs text-gray-500">${p.land} শতক</span></div>
+                <button onclick="delProfile('${p.name}', ${p.land})" class="text-red-500 font-bold">✕</button>
+            </div>`;
+        });
+    }
+
+    async function delProfile(name, land) {
+        if(confirm("মুছে ফেলবেন?")) {
+            await api('/api/deleteProfile', { name, land });
             loadData();
         }
+    }
 
-        function renderProfileList() {
-            const container = document.getElementById('pList');
-            container.innerHTML = '';
-            profiles.forEach(p => {
-                container.innerHTML += `
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100 shadow-sm">
-                    <div>
-                        <p class="font-bold text-gray-800 text-sm">${p.name}</p>
-                        <p class="text-xs text-gray-500">${p.land} শতক | হার: ${p.rate}৳</p>
-                    </div>
-                    <button onclick="delProfile('${p.name}', ${p.land})" class="text-red-400 hover:text-red-600 text-xs font-bold">মুছুন</button>
-                </div>`;
-            });
+    async function saveData() {
+        const data = {
+            name: searchInput.value,
+            land: document.getElementById('dispLand').value,
+            rate: document.getElementById('dispRate').value,
+            hariYear: document.getElementById('hariYear').value,
+            tkGiven: document.getElementById('tkGiven').value,
+            loggedInUser: currentUser
+        };
+        if(!data.name || !data.hariYear) return alert("নাম ও বছর দিন!");
+        const res = await api('/api/saveFormData', data);
+        if(res.success) {
+            alert("সফলভাবে সেভ হয়েছে!");
+            location.reload(); 
         }
-
-        async function delProfile(name, land) {
-            if(confirm("প্রোফাইলটি ডিলিট করবেন?")) {
-                await api('/api/deleteProfile', { name, land });
-                loadData();
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
