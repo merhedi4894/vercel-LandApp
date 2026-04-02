@@ -7,260 +7,193 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .hidden { display: none !important; }
-        .dropdown-list {
+        #dropdownList {
             position: absolute;
-            z-index: 100;
             width: 100%;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
             background: white;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            margin-top: 2px;
+            border: 1px solid #ccc;
+            z-index: 9999;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .dropdown-item {
-            padding: 10px 15px;
+            padding: 10px;
             cursor: pointer;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid #eee;
         }
-        .dropdown-item:hover { background-color: #eff6ff; color: #1d4ed8; }
-        
-        /* Vercel Toolbar Hide */
-        #vercel-live-feedback, [id^="vercel-"], [data-vercel-toolbar] {
-            display: none !important;
-            visibility: hidden !important;
-        }
+        .dropdown-item:hover { background-color: #f0f7ff; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-100">
 
     <div id="loginPage" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-xl shadow-xl w-96 border border-gray-200">
-            <h2 class="text-2xl font-bold mb-6 text-center text-blue-800">অ্যাডমিন লগইন</h2>
-            <input type="text" id="username" placeholder="ইউজারনেম" class="w-full p-3 mb-4 border rounded-lg outline-none focus:border-blue-500">
-            <input type="password" id="password" placeholder="পাসওয়ার্ড" class="w-full p-3 mb-4 border rounded-lg outline-none focus:border-blue-500">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition">প্রবেশ করুন</button>
-            <p id="loginMsg" class="text-red-500 mt-3 text-center text-sm font-medium"></p>
+        <div class="bg-white p-8 rounded shadow-md w-80">
+            <h2 class="text-xl font-bold mb-4 text-center">লগইন</h2>
+            <input type="text" id="username" placeholder="Username" class="w-full p-2 mb-2 border">
+            <input type="password" id="password" placeholder="Password" class="w-full p-2 mb-4 border">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
         </div>
     </div>
 
-    <div id="mainPage" class="hidden container mx-auto p-4 max-w-5xl">
-        <nav class="flex justify-between items-center bg-blue-900 text-white p-4 rounded-xl mb-8 shadow-md">
-            <h1 class="text-lg font-bold tracking-wide">ভূমি লিজ ম্যানেজমেন্ট</h1>
-            <div class="flex items-center gap-4">
-                <span id="userDisplay" class="text-blue-200 text-sm"></span>
-                <button onclick="location.reload()" class="bg-red-500 px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-red-600">লগআউট</button>
-            </div>
-        </nav>
+    <div id="mainPage" class="hidden p-4 container mx-auto">
+        <div class="flex justify-between bg-blue-800 text-white p-4 rounded mb-6">
+            <h1 class="font-bold">ড্যাশবোর্ড</h1>
+            <button onclick="location.reload()" class="bg-red-500 px-2 rounded">Logout</button>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 relative">
-                <h3 class="text-lg font-bold mb-5 text-gray-800 flex items-center gap-2">
-                    <span class="w-2 h-6 bg-blue-600 rounded-full"></span> নতুন তথ্য এন্ট্রি
-                </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded shadow relative">
+                <h3 class="font-bold mb-4 border-b">নতুন এন্ট্রি</h3>
                 
-                <div class="space-y-5">
-                    <div class="relative" id="searchContainer">
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">নাম খুঁজুন (টাইপ করুন)</label>
-                        <input type="text" id="entrySearch" autocomplete="off" 
-                               placeholder="নাম লিখতে শুরু করুন..." 
-                               class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-                        <div id="dropdownList" class="dropdown-list hidden"></div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase">জমির পরিমাণ</label>
-                            <input type="text" id="dispLand" readonly class="w-full p-3 bg-gray-50 border rounded-lg text-gray-700 font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase">হার (টাকা)</label>
-                            <input type="text" id="dispRate" readonly class="w-full p-3 bg-gray-50 border rounded-lg text-gray-700 font-bold">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 pt-2">
-                        <div class="bg-blue-50 p-3 rounded-lg">
-                            <label class="block text-xs font-bold text-blue-700 uppercase mb-1">হারি বছর</label>
-                            <input type="text" id="hariYear" placeholder="২০২৬" class="w-full p-2 border border-blue-200 rounded outline-none focus:border-blue-500">
-                        </div>
-                        <div class="bg-green-50 p-3 rounded-lg">
-                            <label class="block text-xs font-bold text-green-700 uppercase mb-1">টাকা প্রদান</label>
-                            <input type="number" id="tkGiven" placeholder="0.00" class="w-full p-2 border border-green-200 rounded outline-none focus:border-green-500">
-                        </div>
-                    </div>
-
-                    <button onclick="saveData()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 transform active:scale-95 transition">ডাটা সেভ করুন</button>
+                <div class="relative mb-4">
+                    <label class="block text-sm">নাম লিখুন (খুঁজুন)</label>
+                    <input type="text" id="entrySearch" oninput="filterNames(this.value)" autocomplete="off" class="w-full p-2 border rounded">
+                    <div id="dropdownList" class="hidden"></div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="dispLand" placeholder="জমি" readonly class="p-2 border bg-gray-50">
+                    <input type="text" id="dispRate" placeholder="হার" readonly class="p-2 border bg-gray-50">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="hariYear" placeholder="হারি বছর (২০২৬)" class="p-2 border">
+                    <input type="number" id="tkGiven" placeholder="টাকা প্রদান" class="p-2 border">
+                </div>
+
+                <button onclick="saveData()" class="w-full bg-green-600 text-white p-3 rounded font-bold">সেভ করুন</button>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h3 class="text-lg font-bold mb-5 text-gray-800 flex items-center gap-2">
-                    <span class="w-2 h-6 bg-gray-400 rounded-full"></span> প্রোফাইল সেটিংস
-                </h3>
-                <div class="space-y-4">
-                    <input type="text" id="pName" placeholder="ব্যক্তির নাম" class="w-full p-3 border rounded-lg">
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="number" id="pLand" placeholder="জমি (শতক)" class="p-3 border rounded-lg">
-                        <input type="number" id="pRate" placeholder="হার (টাকা)" class="p-3 border rounded-lg">
-                    </div>
-                    <button onclick="saveProfile()" class="w-full bg-gray-800 text-white p-3 rounded-lg font-bold hover:bg-black transition">প্রোফাইল যোগ করুন</button>
+            <div class="bg-white p-6 rounded shadow">
+                <h3 class="font-bold mb-4 border-b">প্রোফাইল যোগ করুন</h3>
+                <input type="text" id="pName" placeholder="নাম" class="w-full p-2 mb-2 border">
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <input type="number" id="pLand" placeholder="জমি" class="p-2 border">
+                    <input type="number" id="pRate" placeholder="হার" class="p-2 border">
                 </div>
-                
-                <div class="mt-6 border-t pt-4">
-                    <p class="text-sm font-bold text-gray-500 mb-3">সংরক্ষিত প্রোফাইল:</p>
-                    <div id="pList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
-                </div>
+                <button onclick="saveProfile()" class="w-full bg-gray-700 text-white p-2 rounded">প্রোফাইল সেভ</button>
+                <div id="pList" class="mt-4 text-sm border-t pt-2"></div>
             </div>
         </div>
     </div>
 
     <script>
-    // গ্লোবাল ভেরিয়েবল
-    window.allProfiles = []; 
-    let currentUser = "";
+        let profiles = [];
+        let loggedUser = "";
 
-    // API কল করার ফাংশন
-    async function api(url, data = {}) {
-        try {
+        // API Call
+        async function apiCall(url, data) {
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            return await res.json();
-        } catch (e) {
-            console.error("API Error:", e);
-            return { success: false };
+            return res.json();
         }
-    }
 
-    // লগইন ফাংশন
-    async function login() {
-        const u = document.getElementById('username').value;
-        const p = document.getElementById('password').value;
-        const res = await api('/api/login', { username: u, password: p });
-        if(res.success) {
-            currentUser = res.user.username;
-            document.getElementById('userDisplay').innerText = `ইউজার: ${currentUser}`;
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('mainPage').classList.remove('hidden');
-            
-            // লগইন সফল হলে ডাটা লোড হবে
-            const dataRes = await api('/api/getInitData');
-            window.allProfiles = dataRes.profiles || [];
-            console.log("ডাটাবেস থেকে পাওয়া প্রোফাইল:", window.allProfiles);
+        async function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await apiCall('/api/login', { username: u, password: p });
+            if(res.success) {
+                loggedUser = u;
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('mainPage').classList.remove('hidden');
+                fetchProfiles();
+            } else { alert("ভুল পাসওয়ার্ড!"); }
+        }
+
+        async function fetchProfiles() {
+            const res = await apiCall('/api/getInitData', {});
+            profiles = res.profiles || [];
             renderProfileList();
-        } else {
-            document.getElementById('loginMsg').innerText = res.message;
-        }
-    }
-
-    // --- ফিল্টারিং এর মূল কোড (সবচেয়ে সহজ পদ্ধতিতে) ---
-    const searchInput = document.getElementById('entrySearch');
-    const dropdown = document.getElementById('dropdownList');
-
-    // ইনপুট বক্সে টাইপ করলে এই ফাংশনটি চলবে
-    searchInput.onkeyup = function() {
-        const val = this.value.trim().toLowerCase();
-        dropdown.innerHTML = ''; // আগের লিস্ট ক্লিয়ার করা
-        
-        if (val === '') {
-            dropdown.classList.add('hidden');
-            return;
         }
 
-        // ফিল্টার করা: নাম বা জমির পরিমাণ দিয়ে খোঁজা
-        const matches = window.allProfiles.filter(p => 
-            p.name.toLowerCase().includes(val)
-        );
+        // --- আসল ফিল্টারিং ফাংশন ---
+        function filterNames(val) {
+            const inputVal = val.toLowerCase().trim();
+            const listDiv = document.getElementById('dropdownList');
+            listDiv.innerHTML = '';
 
-        if (matches.length > 0) {
-            dropdown.classList.remove('hidden');
-            matches.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'p-3 hover:bg-blue-100 cursor-pointer border-b text-sm';
-                div.innerHTML = `<strong>${p.name}</strong> - <span class="text-gray-600">${p.land} শতক</span>`;
-                
-                // ক্লিক করলে ইনপুট বক্সে ডাটা বসে যাবে
-                div.onclick = function() {
-                    searchInput.value = p.name;
-                    document.getElementById('dispLand').value = p.land;
-                    document.getElementById('dispRate').value = p.rate;
-                    dropdown.classList.add('hidden');
-                };
-                dropdown.appendChild(div);
-            });
-        } else {
-            dropdown.classList.remove('hidden');
-            dropdown.innerHTML = '<div class="p-3 text-gray-400 italic">কোনো নাম মেলেনি</div>';
+            if (inputVal === '') {
+                listDiv.classList.add('hidden');
+                return;
+            }
+
+            const matches = profiles.filter(p => p.name.toLowerCase().includes(inputVal));
+
+            if (matches.length > 0) {
+                listDiv.classList.remove('hidden');
+                matches.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.innerHTML = `<strong>${p.name}</strong> (${p.land} শতক)`;
+                    item.onclick = function() {
+                        document.getElementById('entrySearch').value = p.name;
+                        document.getElementById('dispLand').value = p.land;
+                        document.getElementById('dispRate').value = p.rate;
+                        listDiv.classList.add('hidden');
+                    };
+                    listDiv.appendChild(item);
+                });
+            } else {
+                listDiv.classList.add('hidden');
+            }
         }
-    };
 
-    // ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হবে
-    window.onclick = function(event) {
-        if (!event.target.matches('#entrySearch')) {
-            dropdown.classList.add('hidden');
-        }
-    };
+        // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ
+        window.onclick = function(e) {
+            if (e.target.id !== 'entrySearch') {
+                document.getElementById('dropdownList').classList.add('hidden');
+            }
+        };
 
-    // প্রোফাইল সেভ এবং রেন্ডার করার ফাংশন
-    async function saveProfile() {
-        const name = document.getElementById('pName').value;
-        const land = document.getElementById('pLand').value;
-        const rate = document.getElementById('pRate').value;
-        if(!name || !land) return alert("সব তথ্য দিন");
-        
-        const res = await api('/api/saveProfile', { name, land, rate });
-        if(res.success) {
-            alert("প্রোফাইল সেভ হয়েছে");
-            const dataRes = await api('/api/getInitData');
-            window.allProfiles = dataRes.profiles || [];
-            renderProfileList();
+        async function saveProfile() {
+            const name = document.getElementById('pName').value;
+            const land = document.getElementById('pLand').value;
+            const rate = document.getElementById('pRate').value;
+            await apiCall('/api/saveProfile', { name, land, rate });
+            fetchProfiles();
             document.getElementById('pName').value = '';
             document.getElementById('pLand').value = '';
             document.getElementById('pRate').value = '';
         }
-    }
 
-    function renderProfileList() {
-        const list = document.getElementById('pList');
-        list.innerHTML = '';
-        window.allProfiles.forEach(p => {
-            list.innerHTML += `
-            <div class="flex justify-between bg-white p-2 mb-2 border rounded text-xs shadow-sm">
-                <span>${p.name} (${p.land} শতক)</span>
-                <button onclick="delProfile('${p.name}', ${p.land})" class="text-red-500 font-bold">ডিলিট</button>
-            </div>`;
-        });
-    }
-
-    async function delProfile(name, land) {
-        if(confirm("মুছে ফেলবেন?")) {
-            await api('/api/deleteProfile', { name, land });
-            const dataRes = await api('/api/getInitData');
-            window.allProfiles = dataRes.profiles || [];
-            renderProfileList();
+        function renderProfileList() {
+            const div = document.getElementById('pList');
+            div.innerHTML = '<strong>সংরক্ষিত প্রোফাইল:</strong><br>';
+            profiles.forEach(p => {
+                div.innerHTML += `<div class="flex justify-between border-b p-1">
+                    <span>${p.name} (${p.land})</span>
+                    <button onclick="delProfile('${p.name}', ${p.land})" class="text-red-500">✕</button>
+                </div>`;
+            });
         }
-    }
 
-    async function saveData() {
-        const data = {
-            name: searchInput.value,
-            land: document.getElementById('dispLand').value,
-            rate: document.getElementById('dispRate').value,
-            hariYear: document.getElementById('hariYear').value,
-            tkGiven: document.getElementById('tkGiven').value,
-            loggedInUser: currentUser
-        };
-        if(!data.name || !data.hariYear) return alert("নাম ও বছর দিন!");
-        const res = await api('/api/saveFormData', data);
-        if(res.success) {
-            alert("সফলভাবে সেভ হয়েছে!");
-            location.reload(); 
+        async function delProfile(name, land) {
+            if(confirm("মুছবেন?")) {
+                await apiCall('/api/deleteProfile', { name, land });
+                fetchProfiles();
+            }
         }
-    }
-</script>
+
+        async function saveData() {
+            const d = {
+                name: document.getElementById('entrySearch').value,
+                land: document.getElementById('dispLand').value,
+                rate: document.getElementById('dispRate').value,
+                hariYear: document.getElementById('hariYear').value,
+                tkGiven: document.getElementById('tkGiven').value,
+                loggedInUser: loggedUser
+            };
+            if(!d.name || !d.hariYear) return alert("তথ্য দিন!");
+            const res = await apiCall('/api/saveFormData', d);
+            if(res.success) {
+                alert("সেভ হয়েছে!");
+                location.reload();
+            }
+        }
+    </script>
 </body>
 </html>
