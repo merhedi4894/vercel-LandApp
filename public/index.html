@@ -17,25 +17,20 @@
         .btn-primary { background: linear-gradient(135deg, #1e3a5f, #2d5a87); }
         .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        /* FIX: Removed quote from gradient */
         .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; }
         
-        /* Confirm Modal on top */
         #confirmModal { z-index: 10000; background: rgba(0,0,0,0.8); }
 
-        /* Dropdown: z-index increased to ensure it stays on top */
         .dropdown-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #0ea5e9; max-height: 200px; overflow-y: auto; z-index: 999; border-radius: 0 0 8px 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        /* Toast Notification Center */
         #toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
         .toast { padding: 15px 30px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out; text-align: center; min-width: 250px; font-size: 18px; pointer-events: auto; }
         .toast.success { background-color: #10b981; }
         .toast.error { background-color: #ef4444; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Hide Arrows from Number Input */
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
     </style>
@@ -54,13 +49,15 @@
         </div>
     </div>
 
-    <!-- LOGIN -->
+    <!-- LOGIN & RESET SECTION -->
     <div id="loginSection" class="max-w-md mx-auto">
         <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
             <div class="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-primary shadow-lg flex items-center justify-center bg-gray-100">
                 <img src="https://i.imgur.com/8CJlOgq.png" alt="User" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-4xl text-primary\'>👤</span>'">
             </div>
             <h2 class="text-2xl font-bold text-primary mb-6" data-lang="login_title">Login</h2>
+            
+            <!-- Default Login Form -->
             <form id="loginForm">
                 <input type="text" id="username" value="mehedi4894" class="input-field w-full px-4 py-3 rounded-lg mb-4 bg-gray-100 font-semibold" required>
                 
@@ -79,7 +76,34 @@
 
                 <div id="loginError" class="hidden text-red-500 text-sm mb-3"></div>
                 <button type="submit" class="btn btn-primary w-full py-3 rounded-lg font-semibold" data-lang="login_btn">Login</button>
+                
+                <!-- Forgot Password Link -->
+                <div class="mt-4 text-sm">
+                    <a href="#" onclick="showForgotPassword()" class="text-blue-600 hover:underline">Forgot Password?</a>
+                </div>
             </form>
+
+            <!-- Forgot Password Form (Hidden by default) -->
+            <div id="forgotForm" class="hidden">
+                <button onclick="showLoginForm()" class="text-left text-gray-500 mb-4 flex items-center gap-1 text-sm"><span>&larr;</span> Back to Login</button>
+                
+                <p class="text-gray-600 text-sm mb-4 text-left">Enter your admin email to receive a verification code.</p>
+                <input type="email" id="resetEmail" value="mehedi24.info@gmail.com" class="input-field w-full px-4 py-3 rounded-lg mb-4" placeholder="Admin Email">
+                <button onclick="requestResetCode()" class="btn bg-blue-500 w-full py-3 rounded-lg font-semibold">Send Code</button>
+                <div id="resetMsg" class="mt-2 text-sm text-center"></div>
+            </div>
+
+            <!-- Reset Password Form (Hidden by default) -->
+            <div id="resetForm" class="hidden">
+                <button onclick="showLoginForm()" class="text-left text-gray-500 mb-4 flex items-center gap-1 text-sm"><span>&larr;</span> Back to Login</button>
+                
+                <p class="text-gray-600 text-sm mb-4 text-left">Enter the code sent to your email and set a new password.</p>
+                <input type="text" id="resetCode" class="input-field w-full px-4 py-3 rounded-lg mb-3" placeholder="6 Digit Code">
+                <input type="password" id="newPassword" class="input-field w-full px-4 py-3 rounded-lg mb-4" placeholder="New Password">
+                <button onclick="confirmResetPassword()" class="btn btn-success w-full py-3 rounded-lg font-semibold">Update Password</button>
+                <div id="resetConfirmMsg" class="mt-2 text-sm text-center"></div>
+            </div>
+
         </div>
     </div>
 
@@ -97,7 +121,6 @@
             </div>
             <div class="flex gap-2">
                 <button onclick="toggleLang()" id="langBtn" class="btn bg-yellow-500 text-black px-3 py-2 rounded-lg text-sm font-bold">EN</button>
-                <!-- Added type="button" -->
                 <button type="button" onclick="openSettings()" class="btn bg-white text-primary px-3 py-2 rounded-lg text-sm font-bold" data-lang="settings_btn">Settings</button>
                 <button onclick="logout()" class="btn bg-red-500/80 px-3 py-2 rounded-lg text-sm" data-lang="logout_btn">Logout</button>
             </div>
@@ -151,7 +174,6 @@
                     <select id="searchLand" class="input-field px-3 py-2 rounded-lg"><option value="ALL" data-lang="all_lands">All Lands</option></select>
                     <select id="searchYear" class="input-field px-3 py-2 rounded-lg"><option value="ALL" data-lang="all_years">All Years</option></select>
                     <div class="flex gap-2">
-                        <!-- Button color fixed via CSS -->
                         <button onclick="getDue()" class="btn btn-success px-3 rounded-lg flex-1" data-lang="due_btn">Due</button>
                         <button onclick="getData()" class="btn bg-purple-600 px-3 rounded-lg flex-1" data-lang="data_btn">Data</button>
                         <button onclick="delData()" class="btn btn-danger px-3 rounded-lg" id="delBtnMain" data-lang="del_btn">Delete</button>
@@ -234,6 +256,60 @@
 
         const api = (url, data = {}) => { const separator = url.includes('?') ? '&' : '?'; const cacheUrl = url + separator + 't=' + new Date().getTime(); return fetch(cacheUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()); };
 
+        // --- PASSWORD RESET FUNCTIONS ---
+        function showForgotPassword() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('resetForm').classList.add('hidden');
+            document.getElementById('forgotForm').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('forgotForm').classList.add('hidden');
+            document.getElementById('resetForm').classList.add('hidden');
+        }
+
+        async function requestResetCode() {
+            const email = document.getElementById('resetEmail').value;
+            if(!email) return showToast("Enter email", "error");
+            
+            document.getElementById('resetMsg').innerText = "Sending...";
+            document.getElementById('resetMsg').className = "mt-2 text-sm text-center text-gray-600";
+
+            const res = await api('/api/forgotPassword', { email: email });
+            
+            if (res.success) {
+                document.getElementById('forgotForm').classList.add('hidden');
+                document.getElementById('resetForm').classList.remove('hidden');
+                showToast("Code sent to email!", "success");
+            } else {
+                document.getElementById('resetMsg').innerText = res.message || "Error sending code";
+                document.getElementById('resetMsg').className = "mt-2 text-sm text-center text-red-500";
+            }
+        }
+
+        async function confirmResetPassword() {
+            const code = document.getElementById('resetCode').value;
+            const newPass = document.getElementById('newPassword').value;
+
+            if(!code || !newPass) return showToast("Fill all fields", "error");
+
+            document.getElementById('resetConfirmMsg').innerText = "Updating...";
+            document.getElementById('resetConfirmMsg').className = "mt-2 text-sm text-center text-gray-600";
+
+            const res = await api('/api/resetPassword', { code: code, newPassword: newPass });
+            
+            if (res.success) {
+                showToast("Password updated! Login now.", "success");
+                showLoginForm();
+            } else {
+                document.getElementById('resetConfirmMsg').innerText = res.message || "Error resetting password";
+                document.getElementById('resetConfirmMsg').className = "mt-2 text-sm text-center text-red-500";
+            }
+        }
+
+        // Login Logic
         document.getElementById('loginForm').addEventListener('submit', async e => { e.preventDefault(); const res = await api('/api/login', { username: document.getElementById('username').value, password: document.getElementById('password').value }); if (res.success) { user = res.user; localStorage.setItem('s', JSON.stringify({ u: user.name })); document.getElementById('loginSection').classList.add('hidden'); document.getElementById('appSection').classList.remove('hidden'); init(); startIdleMonitor(); } else { document.getElementById('loginError').classList.remove('hidden'); document.getElementById('loginError').innerText = res.message; } });
         const logout = () => { clearTimeout(idleTimer); localStorage.removeItem('s'); location.reload(); };
 
