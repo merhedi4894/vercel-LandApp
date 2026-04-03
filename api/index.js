@@ -41,7 +41,7 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL_USER || 'mehedi24.info@gmail.com',
         // আপনার ১৬ ডিজিটের কোডটি এখানে বসান, অথবা Vercel-এ EMAIL_PASS সেট করুন
-        pass: process.env.EMAIL_PASS || 'এখানে_আপনার_১৬_ডিজিটের_কোড_লিখুন'
+        pass: process.env.EMAIL_PASS || 'vuwa izeu becj luhj'
     }
 });
 
