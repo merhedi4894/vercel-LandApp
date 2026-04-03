@@ -54,19 +54,20 @@ function generateCode() { return Math.floor(100000 + Math.random() * 900000).toS
 
 // --- Routes ---
 
-// 1. Login Route (Updated)
+// --- Routes (Login Section Only) ---
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     
-    // প্রথমে Environment Variable চেক করবে
-    const envUser = process.env.ADMIN_USER || 'mehedi4894';
-    const envPass = process.env.ADMIN_PASS;
+    // Environment Variable থাকলে সেটা নিবে, না থাকলে ডিফল্ট পাসওয়ার্ড ব্যবহার করবে
+    const validUser = process.env.ADMIN_USER || 'mehedi4894';
+    const validPass = process.env.ADMIN_PASS || 'Mehedi@01747527352'; // এই লাইনটি ঠিক করা হয়েছে
 
-    if (username === envUser && password === envPass) {
+    // ১. প্রথমে Environment Variable চেক করবে
+    if (username === validUser && password === validPass) {
         return res.json({ success: true, user: { username, name: username } });
     }
 
-    // যদি Env মিলে না যায়, তবে Database চেক করবে (রিসেট করা পাসওয়ার্ড)
+    // ২. যদি Env মিলে না যায়, তবে Database চেক করবে (রিসেট করা পাসওয়ার্ড)
     try {
         const adminInDb = await Admin.findOne({ username });
         if (adminInDb && await bcrypt.compare(password, adminInDb.password)) {
@@ -75,6 +76,7 @@ app.post('/api/login', async (req, res) => {
     } catch (e) { console.log("DB Login check error", e); }
 
     res.json({ success: false, message: 'Invalid Credentials!' });
+});
 });
 
 // 2. Forgot Password Route (Send Code)
