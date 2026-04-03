@@ -6,7 +6,6 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 
-// Models Import (আপনার ফাইল স্ট্রাকচার অনুযায়ী)
 const { Profile, LandData } = require('../models/DataSchema');
 
 const app = express();
@@ -22,8 +21,7 @@ const MONGO_URI = process.env.MONGO_URI;
 if (!MONGO_URI) { console.error("Error: MONGO_URI not found."); process.exit(1); }
 mongoose.connect(MONGO_URI).then(() => console.log('MongoDB Connected!')).catch(err => console.error('MongoDB Error:', err));
 
-// --- Mongoose Schema for Admin (Password Reset এর জন্য) ---
-// এটি 'admins' নামের একটি কালেকশন তৈরি করবে যেখানে রিসেট করা পাসওয়ার্ড থাকবে
+// --- Mongoose Schema for Admin ---
 const AdminSchema = new mongoose.Schema({
     username: { type: String, default: 'mehedi4894', unique: true },
     password: { type: String, required: true }
@@ -31,16 +29,15 @@ const AdminSchema = new mongoose.Schema({
 const Admin = mongoose.model('Admin', AdminSchema);
 
 // --- Email Transporter Setup ---
-// এখানে আপনার জিমেইল এবং অ্যাপ পাসওয়ার্ড দিতে হবে
+// যদি App Password না থাকে, তাও সার্ভার ক্র্যাশ করবে না, শুধু ইমেইল ফিচার কাজ করবে না।
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER || 'mehedi24.info@gmail.com',
-        pass: process.env.EMAIL_PASS // জিমেইল অ্যাপ পাসওয়ার্ড (১৬ ডিজিটের)
+        pass: process.env.EMAIL_PASS 
     }
 });
 
-// Temporary Storage for Reset Codes (মেমোরিতে রাখা হলো, সার্ভার রিস্টার্ট দিলে কোড মুছে যাবে)
 const resetCodes = {};
 
 // --- Helper Functions ---
@@ -54,13 +51,13 @@ function generateCode() { return Math.floor(100000 + Math.random() * 900000).toS
 
 // --- Routes ---
 
-// --- Routes (Login Section Only) ---
+// 1. Login Route (Fixed Syntax Error)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     
     // Environment Variable থাকলে সেটা নিবে, না থাকলে ডিফল্ট পাসওয়ার্ড ব্যবহার করবে
     const validUser = process.env.ADMIN_USER || 'mehedi4894';
-    const validPass = process.env.ADMIN_PASS || 'Mehedi@01747527352'; // এই লাইনটি ঠিক করা হয়েছে
+    const validPass = process.env.ADMIN_PASS || 'Mehedi@01747527352'; 
 
     // ১. প্রথমে Environment Variable চেক করবে
     if (username === validUser && password === validPass) {
@@ -76,21 +73,24 @@ app.post('/api/login', async (req, res) => {
     } catch (e) { console.log("DB Login check error", e); }
 
     res.json({ success: false, message: 'Invalid Credentials!' });
-});
-});
+}); // <--- ভুলটি এখানে ছিল, এটি ঠিক করা হয়েছে
 
-// 2. Forgot Password Route (Send Code)
+// 2. Forgot Password Route
 app.post('/api/forgotPassword', async (req, res) => {
     const { email } = req.body;
     const adminEmail = process.env.EMAIL_USER || 'mehedi24.info@gmail.com';
 
-    // শুধুমাত্র অ্যাডমিন ইমেইলেই কোড যাবে
     if (email !== adminEmail) {
         return res.json({ success: false, message: "This email is not registered as admin." });
     }
+    
+    // চেক করা হচ্ছে সার্ভারে কি ইমেইল পাসওয়ার্ড কনফিগার করা আছে কিনা
+    if (!process.env.EMAIL_PASS) {
+        return res.json({ success: false, message: "Email service not configured on server." });
+    }
 
     const code = generateCode();
-    resetCodes[email] = { code: code, expires: Date.now() + 300000 }; // 5 মিনিটের জন্য ভ্যালিড
+    resetCodes[email] = { code: code, expires: Date.now() + 300000 };
 
     const mailOptions = {
         from: adminEmail,
@@ -104,11 +104,11 @@ app.post('/api/forgotPassword', async (req, res) => {
         res.json({ success: true });
     } catch (error) {
         console.error("Email Error:", error);
-        res.json({ success: false, message: "Failed to send email. Check server logs." });
+        res.json({ success: false, message: "Failed to send email." });
     }
 });
 
-// 3. Reset Password Route (Update Password)
+// 3. Reset Password Route
 app.post('/api/resetPassword', async (req, res) => {
     const { code, newPassword } = req.body;
     const email = process.env.EMAIL_USER || 'mehedi24.info@gmail.com';
@@ -116,33 +116,24 @@ app.post('/api/resetPassword', async (req, res) => {
 
     const storedData = resetCodes[email];
 
-    if (!storedData || storedData.code !== code) {
-        return res.json({ success: false, message: "Invalid code." });
-    }
-    if (Date.now() > storedData.expires) {
-        return res.json({ success: false, message: "Code expired." });
-    }
+    if (!storedData || storedData.code !== code) return res.json({ success: false, message: "Invalid code." });
+    if (Date.now() > storedData.expires) return res.json({ success: false, message: "Code expired." });
 
     try {
-        // নতুন পাসওয়ার্ড হ্যাশ করে ডাটাবেসে সেভ করা
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        
-        // আপডেট করুন অথবা নতুন করে তৈরি করুন
         await Admin.findOneAndUpdate(
             { username: username },
             { password: hashedPassword },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
-
-        delete resetCodes[email]; // কোড ডিলিট
+        delete resetCodes[email]; 
         res.json({ success: true });
     } catch (e) {
-        console.error(e);
         res.json({ success: false, message: "Error updating password." });
     }
 });
 
-// --- Existing Routes (Unchanged) ---
+// --- Existing Routes ---
 
 app.post('/api/saveFormData', async (req, res) => {
     try {
