@@ -29,15 +29,14 @@ const AdminSchema = new mongoose.Schema({
 const Admin = mongoose.model('Admin', AdminSchema);
 
 // --- Email Transporter Setup ---
-// যদি App Password না থাকে, তাও সার্ভার ক্র্যাশ করবে না, শুধু ইমেইল ফিচার কাজ করবে না।
+// এখানে process.env.EMAIL_PASS না থাকলে, ডাবল কোটেশনের ভেতরে আপনার ১৬ ডিজিটের কোডটি বসিয়ে দিন
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER || 'mehedi24.info@gmail.com',
-        pass: process.env.EMAIL_PASS 
+        pass: process.env.EMAIL_PASS || 'vuwa izeu becj luhj' 
     }
 });
-
 const resetCodes = {};
 
 // --- Helper Functions ---
@@ -84,13 +83,20 @@ app.post('/api/forgotPassword', async (req, res) => {
         return res.json({ success: false, message: "This email is not registered as admin." });
     }
     
-    // চেক করা হচ্ছে সার্ভারে কি ইমেইল পাসওয়ার্ড কনফিগার করা আছে কিনা
-    if (!process.env.EMAIL_PASS) {
-        return res.json({ success: false, message: "Email service not configured on server." });
-    }
-
+    // আগের চেকটি সরিয়ে দেওয়া হলো যাতে কোডে পাসওয়ার্ড থাকলেই কাজ হয়
+    // যদি এখানে এরর আসে তবে বুঝবেন আপনার জিমেইল অ্যাকাউন্ট থেকে ব্লক করা হয়েছে
+    
+    const username = process.env.ADMIN_USER || 'mehedi4894';
     const code = generateCode();
-    resetCodes[email] = { code: code, expires: Date.now() + 300000 };
+    const expires = new Date(Date.now() + 5 * 60 * 1000); 
+
+    try {
+        await Admin.findOneAndUpdate(
+            { username: username },
+            { resetCode: code, resetCodeExpires: expires },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    } catch (e) { return res.json({ success: false, message: "DB Error" }); }
 
     const mailOptions = {
         from: adminEmail,
@@ -103,11 +109,11 @@ app.post('/api/forgotPassword', async (req, res) => {
         await transporter.sendMail(mailOptions);
         res.json({ success: true });
     } catch (error) {
-        console.error("Email Error:", error);
-        res.json({ success: false, message: "Failed to send email." });
+        console.error("Email Sending Error:", error); 
+        // এখানে স্পেসিফিক এরর মেসেজ দেখাবে কেন ইমেইল যায়নি
+        res.json({ success: false, message: `Failed to send email: ${error.message}` }); 
     }
 });
-
 // 3. Reset Password Route
 app.post('/api/resetPassword', async (req, res) => {
     const { code, newPassword } = req.body;
